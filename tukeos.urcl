@@ -1,18 +1,21 @@
 //
-// Tuke's Take at URCL OS 
-// Initial startup routines and bootloader.
+// Tukeque's URCL OS
+// Lucida Dragon coded all the instructions(except LoadMemory, StoreMemory, Input, Output and SystemCall). Tukeque did the rest.
 //
 
+// TODO : fix branching and implement errors
+
+// URCL header
 BITS >= 16
 MINREG 3
 MINRAM 65536
-// TODO specify run in ram (needs URCL header update)
+RUN RAM
 
-BRA 0x200
+@org 0x0200
 
 // Load files
 
-BRA 0
+@org 0x0000
 
 // Instruction-Address Table
 .InstructionAddressTable
@@ -40,6 +43,7 @@ DW .StoreMemory // 20
 DW .Input // 21
 DW .Output // 22
 DW .SystemCall // 23
+DW .Halt // 24
 
 .SystemCalls
 DW .Exit // 0
