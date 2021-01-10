@@ -1,0 +1,512 @@
+//
+// Tukeque's URCL OS
+// Lucida Dragon coded all the instructions(except LoadMemory, StoreMemory, Input, Output and SystemCall). Tukeque did the rest.
+//
+
+// TODO :
+// - Fix branching
+// - Implement error system
+// - Correct ports (needs urcl update)
+
+// URCL header
+BITS >= 16
+MINREG 3
+MINRAM 65536
+RUN RAM
+
+@org 0x0200
+
+// Load files
+
+@org 0x0000
+
+// Instruction-Address Table
+.InstructionAddressTable
+DW .Push // 0
+DW .Pop // 1
+DW .And // 2 
+DW .Or // 3
+DW .Xor // 4
+DW .Not // 5
+DW .Increment // 6
+DW .Decrement // 7
+DW .Add // 8
+DW .Substract // 9
+DW .Multiply // 10
+DW .Divide // 11
+DW .Modulo // 12
+DW .ShiftLeft // 13
+DW .ShiftRight // 14
+DW .BranchIfZero // 15
+DW .BranchIfNotZero // 16
+DW .BranchIfPositive // 17
+DW .BranchIfNegative // 18
+DW .LoadMemory // 19
+DW .StoreMemory // 20
+DW .Input // 21
+DW .Output // 22
+DW .SystemCall // 23
+DW .Halt // 24
+
+.SystemCalls
+DW .Exit // 0
+DW .Beans // 1
+
+.Files
+// Space for File Info
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DW 0 // stopper
+
+.SpecialVariables
+	// OS Variables
+	// Stores whether the OS has already booted.
+	.Booted
+	DW 0
+
+	// Interpreter Variables
+	.Pointer
+	// Stores the address of the next instruction to be executed.
+	DW 0
+
+	.Instruction
+	// Stores the next instruction to be executed.
+	DW 0
+
+	.End
+	// Stores the end of the program being executed.
+	DW 0
+
+	// File Scan Variables
+	.ScanPointer
+	// Stores the address for the pointer scanning the storage for files
+	DW .KernelMemoryLimit
+
+	.FileNumber
+	// Stores the number of the file currently scanning (is multiplied by two. Ex: File 3 => FileNumber = 6)
+	DW 0
+
+	.FileInfoPointer
+	// Stores the pointer of the File Info Double Word for the file currently scanning
+	DW 0
+
+.Constants
+	// Stores 0x69
+	.ConsolePortMeme
+	DW 0x69
+
+	// Stores the absolute value of the difference of 0x69 to the port for the console (8-Bit Ascii) (Standard I/O port) (79)
+	.ConsolePortDifference
+	DW 0x1A
+
+	// Stores the limit of the memory for programs (inclusive)
+	.ProgramMemoryLimit
+	DW 0xFFFF
+
+	// Stores the limit of the memory for the kernel (exclusive)
+	.KernelMemoryLimit
+	DW 0x0200
+
+.Boot
+    LOD R1, .Booted
+    OR R1, R1, R1
+    BNZ .ScanFiles
+    STR .Booted, 1
+
+	// Here should go stuff that would happen on first launch of the OS
+
+	// (Continues to .ScanFiles)
+
+.ScanFiles
+	// Write to .Files
+	LOD R1, .Files
+	LOD R2, .FileNumber
+	ADD R1, R1, R2
+	STR .FileInfoPointer, R1
+
+	LOD R2, .ScanPointer
+	STR R1, R2 // raw address
+
+	LOD R2, R2
+
+	AND R1, R2, 0xC000 // 1100 0000 0000 0000 // type of header
+	BSR R1, R1, 0x0E // >>> 14
+
+	PSH R1
+	SUB R1, R1, 1 // 0 if HEADER (01 - 01 = 00)
+	BNZ .ContinueMoment // If not zero, (Body) Check next for file HEADER
+	// 00 = EMPTY; 01 = HEADER; 10 = BODY; 11 = ??
+
+	AND R1, R2, 0x3F00 // 0011 1111 0000 0000 // length
+	BSR R1, R1, 0x08 // >>> 8
+	PSH R1
+	BSL R1, R1, 0x0A // <<< 10
+	PSH R1 // 1111 1100 0000 0000 // length (to the left)
+
+	// Directory is 0 // 0000 0011 0000 0000 // directory
+
+	AND R1, R2, 0x00FF // 0000 0000 1111 1111 // name
+	POP R2
+	OR R1, R1, R2 // 1111 1100 1111 1111
+
+	LOD R2, .FileInfoPointer
+	STR R2, R1
+
+	// Update .ScanPointer for the next cycle and increment .FileNumber
+	.ContinueMoment
+	LOD R1, .ScanPointer
+	POP R2
+
+	BSL R2, R2, 0x1F
+	ADD R1, R1, R2
+
+	STR .ScanPointer, R1
+	LOD R1, .FileNumber
+	ADD R1, R1, 0x2
+	STR .FileNumber, R1
+
+	// if haven't reached empty space, loop again for another file
+	POP R1
+	BNZ .ScanFiles
+
+	// (Continues to .SelectProgram)
+
+.SelectProgram
+    // Select Program to run
+	// This is called whenever a program exits (HLT is called) or pointer reaches the limit of program memory
+
+	// Display loaded files
+	OUT 0x48, 0x46 // "F" // abreviation for "Files"
+	// OUT 0x48, 0x69 // "i" // nice
+	// OUT 0x48, 0x6C // "l"
+	// OUT 0x48, 0x65 // "e"
+	// OUT 0x48, 0x73 // "s"
+	OUT 0x48, 0x3A // ":"
+	OUT 0x48, 0x20 // " "
+
+	LOD R1, .Files
+	.Loop
+		// check if file
+		OR R1, R1, R1 // load flags
+		BRZ .End // exit if zero (no file)
+
+		// continue if file
+		INC R1, R1
+
+		LOD R2, R1 // load file header
+		AND R2, R2, 0x00FF
+		OUT 0x48, R2 // name
+		OUT 0x48, 0x2C // ","
+		OUT 0x48, 0x20 // " "
+
+		ADD R1, R1, 2
+		BRA .Loop
+	.End
+
+	LOD R1, .ConsolePortMeme
+	LOD R2, .ConsolePortDifference
+	SUB R1, R1, R2
+
+	IN R2, R1
+	SUB R2, R2, 0x30
+
+	BSL R2, R2, 0x1
+	LOD R1, .Files
+	ADD R1, R1, R2
+	INC R1, R1
+	
+	STR .Pointer, R1
+
+	// (Continues to .InterpretationLoop)
+
+.InterpretationLoop
+	// Interpretation Loop - Run the desired program calling .Execute per instruction
+
+	// Check if instruction pointer is looking at metadata and if so, skip word
+	LOD R1, .Pointer
+	MOD R2, R1, 0x20
+	BNZ +2
+	INC R1, R1
+
+	// Check if the pointer has reached the limit of the program and if so, exit (Return to select program).
+	LOD R2, .End
+	SUB R2, R1, R2
+	BRZ .SelectProgram
+
+	// Update PC
+	INC R1, R1
+	STR .Pointer, R1
+
+	// Load .Instruction
+	LOD R2, R1
+	STR .Instruction, R2
+
+	CAL .Execute
+
+	BRA .InterpretationLoop
+
+// Execute the instruction stored in memory utlizing the Instruction-Address Table for quicker branching.
+.Execute
+    LOD R1, .Instruction
+
+    AND R1, R1, 0x1F
+	BRZ .Return
+
+	IMM R2, .InstructionAddressTable
+	ADD R1, R1, R2
+
+    LOD R2, R1
+    CAL R2
+
+	BRA .Return
+
+// Instructions
+.Push
+	LOD R1, .Pointer
+	INC R1, R1
+	STR .Pointer, R1
+
+	LOD R2, R1
+	LOD R1, R2
+	PSH R1
+	RET
+
+.Pop
+	POP R0
+	RET
+
+.And
+	POP R2
+	POP R1
+	AND R1, R1, R2
+	PSH R1
+	RET
+
+.Or
+	POP R2
+	POP R1
+	OR R1, R1, R2
+	PSH R1
+	RET
+
+.Xor
+	POP R2
+	POP R1
+	XOR R1, R1, R2
+	PSH R1
+	RET
+
+.Not
+	POP R1
+	NOT R1, R1
+	PSH R1
+	RET
+
+.Increment
+	POP R1
+	INC R1, R1
+	PSH R1
+	RET
+
+.Decrement
+	POP R1
+	DEC R1, R1
+	PSH R1
+	RET
+
+.Add
+	POP R2
+	POP R1
+	ADD R1, R1, R2
+	PSH R1
+	RET
+
+.Subtract
+	POP R2 // -2
+	POP R1 // -1
+	SUB R1, R1, R2 // -1 - -2
+	PSH R1
+	RET
+
+.Multiply
+	POP R2
+	POP R1
+	MLT R1, R1, R2
+	PSH R1
+	RET
+
+.Divide
+	POP R2
+	POP R1
+	DIV R1, R1, R2
+	PSH R1
+	RET
+
+.Modulo
+	POP R2
+	POP R1
+	MOD R1, R1, R2
+	PSH R1
+	RET
+
+.ShiftLeft
+	POP R2
+	POP R1
+	BSL R1, R1, R2
+	PSH R1
+	RET
+
+.ShiftRight
+	POP R2
+	POP R1
+	BSR R1, R1, R2
+	PSH R1
+	RET
+
+.BranchIfZero // TODO verify to not jump in kernel or outside program // TODO make jump relative
+	POP R2 // -2
+	POP R1 // -1
+	OR R1, R1, R1
+	BNZ .Return // Branches depending on -1, to -2
+	LOD R1, .Pointer
+	ADD R1, R1, R2
+	DEC R1, R1
+	STR .Pointer, R1
+	RET
+
+.BranchIfNotZero
+	POP R2
+	POP R1
+	OR R1, R1, R1
+	BRZ .Return
+	LOD R1, .Pointer
+	ADD R1, R1, R2
+	DEC R1, R1
+	STR .Pointer, R1
+	RET
+
+.BranchIfPositive
+	POP R2
+	POP R1
+	OR R1, R1, R1
+	BRN .Return
+	LOD R1, .Pointer
+	ADD R1, R1, R2
+	DEC R1, R1
+	STR .Pointer, R1
+	RET
+
+.BranchIfNegative
+	POP R2
+	POP R1
+	OR R1, R1, R1
+	BRP .Return
+	LOD R1, .Pointer
+	ADD R1, R1, R2
+	DEC R1, R1
+	STR .Pointer, R1
+	RET
+
+.LoadMemory
+	POP R1
+
+	// Check if address is addressing kernel
+	LOD R2, .KernelMemoryLimit
+	SUB R2, R1, R2
+	// Segmentation Fault !!! (Addressing kernel (bad,,,))
+	BRP .SelectProgram
+
+	LOD R2, R1
+	PSH R2
+
+.StoreMemory
+	POP R1
+
+	// Check if address is adressing kernel
+	LOD R2, .KernelMemoryLimit
+	SUB R2, R1, R2
+	// Segmentation Fault !!! (Addressing kernel (bad,,,))
+	BRP .SelectProgram
+
+	POP R2
+	STR R1, R2
+
+.Input
+	LOD R1, .ConsolePortMeme
+	LOD R2, .ConsolePortDifference
+	SUB R1, R1, R2
+	
+	IN R2, R1
+	PSH R2
+
+.Output
+	LOD R1, .ConsolePortMeme
+	LOD R2, .ConsolePortDifference
+	SUB R1, R1, R2
+
+	POP R2
+	OUT R1, R2
+
+.SystemCall
+    POP R1
+
+    AND R1, R1, 0x0F
+	// Only 16 system calls? (For now?)
+	// Exception !!! (Desired system call doesnt exist ! (bad,,,))
+	BRZ .SelectProgram
+
+	IMM R2, .SystemCalls
+	ADD R1, R1, R2
+
+    LOD R2, R1
+    CAL R2
+
+	BRA .Return
+
+.Return
+    RET
+
+.Halt
+    // HLT (program)
+	BRA .SelectProgram
+
+// System Calls
+.Exit
+	// Exit (CPU)
+	// Halt the CPU, exiting the OS
+	HLT
+
+.Beans
+	// Output "Beans!"
+
+	PSH 0x42
+	// B
+	CAL .Output
+
+	PSH 0x65
+	// e
+	CAL .Output
+
+	PSH 0x61
+	// a
+	CAL .Output
+
+	PSH 0x6E
+	// n
+	CAL .Output
+
+	PSH 0x73
+	// s
+	CAL .Output
+
+	PSH 0x21
+	// !
+	CAL .Output
+
+	RET
