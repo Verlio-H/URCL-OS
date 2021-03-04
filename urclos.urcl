@@ -4,11 +4,11 @@
 
 BITS >= 16
 MINREG 2
-MINRAM 1024
+MINRAM 1120
 RUN RAM
 
 BRA .Boot
-@org 0x200
+@org 0x400
 
 // Load files
 .Page1
@@ -27,7 +27,7 @@ BRA .Boot
 	DW 26 //system call
 
 	DW 27 // #0x20B
-@org 0x220
+@org 0x420
 .Page2
 	DW 0x4269 // header // 'i' - "Program Installer v0.1" // 2 Page(s) (Writen by Verlio)
 	DW 1 //push jump address for after verifying the header
@@ -59,11 +59,11 @@ BRA .Boot
 	DW 0x260
 	DW 9 //adding the offset to the write address
 	DW 21 //store
-@org 0x240
+@org 0x440
 .Page3
 	DW 0x8000 //body
 	DW 1 //pushing the offset again
-	DW 0x260
+	DW 0x460
 	DW 10 //subtracting the offset
 	DW 24 //swaping the length above the read address
 	DW 8 //decrementing one from the length
@@ -176,7 +176,7 @@ DW 0 // stopper
 
 	// Stores the limit of the memory for the kernel (exclusive)
 	.KernelMemoryLimit
-	DW 0x0200
+	DW 0x0400
 
 .Boot
     LOD R1, .Booted
@@ -243,7 +243,6 @@ DW 0 // stopper
 	ADD R1, R1, 0x2
 	STR .FileNumber, R1
 
-	// if haven't reached empty space, loop again for another file
     BRA .ScanFiles
 
 	// (Continues to .SelectProgram)
@@ -611,7 +610,6 @@ DW 0 // stopper
 	PSH R2
 	RET
 .Error
-    POP R1
     //Prints "Error (number)"
     OUT %79, 0x45 //E
     OUT %79, 0x72 //r
@@ -634,16 +632,16 @@ DW 0 // stopper
     OUT %79, 0x20 //space
     RET
 .Error0
-    PSH 0x30
+    IMM R1, 0x30
     BRA .Error
 .Error1
-    PSH 0x31
+    IMM R1, 0x31
     BRA .Error
 .Error2
-    PSH 0x32
+    IMM R1, 0x32
     BRA .Error
 .Error3
-    PSH 0x33
+    IMM R1, 0x33
     BRA .Error
 .Warning0
     BRA .Warning
