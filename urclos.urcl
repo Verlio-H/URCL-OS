@@ -29,7 +29,7 @@ BRA .Boot
 	DW 27 // #0x20B
 @org 0x220
 .Page2
-	DW 0x4169 // header // 'i' - "Program Installer v0.1" // 2 Page(s) (Writen by Verlio)
+	DW 0x4269 // header // 'i' - "Program Installer v0.1" // 2 Page(s) (Writen by Verlio)
 	DW 1 //push jump address for after verifying the header
 	DW 0x231 
 	DW 1 //push current read address
