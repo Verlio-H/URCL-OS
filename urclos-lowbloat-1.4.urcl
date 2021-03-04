@@ -1,6 +1,12 @@
 //
 // Tuke and Verlio's take at URCL OS
 //
+// This version has:
+// No meme/useless functions and variables
+// No Programs installed by default
+// No warnings
+// Errors is abreviated to E and Files is abreviated to F
+
 
 BITS >= 16
 MINREG 2
@@ -8,74 +14,8 @@ MINRAM 1024
 RUN RAM
 
 BRA .Boot
-@org 0x200
 
 // Load files
-.Page1
-	DW 0x4142 // header // "B" - "BEAN CONSOLE v0.1" // 1 Page(s) (Writen by Tuke)
-
-	DW 1 //push
-	DW 0x20B // PROGRAM END(HALT) (JUMP TARGET)
-
-	DW 1 //push
-	DW 0x42 // "B"
-	DW 22 //input
-	DW 10 //subtract
-	DW 17 //branch if not zero // BRANCH TO END
-	DW 1 //push
-	DW 1 //Beans
-	DW 26 //system call
-
-	DW 27 // #0x20B
-@org 0x220
-.Page2
-	DW 0x4169 // header // 'i' - "Program Installer v0.1" // 2 Page(s) (Writen by Verlio)
-	DW 1 //push jump address for after verifying the header
-	DW 0x231 
-	DW 1 //push current read address
-	DW 0
-	DW 1 //pushes to push system calls
-	DW 2
-	DW 1
-	DW 4
-	DW 26 //system calls to set the address and to read
-	DW 26
-	DW 1 //pushing correct header
-	DW 0b10101010
-	DW 10 //subtracting and branching to verify header
-	DW 16
-	DW 27 //halt for if header is incorrect
-	DW 22 //inputing the length of the file
-	DW 24 //swap to put the length under the current read address
-	DW 7 //incriment the adress being read from
-	DW 1 //pushes to push system calls
-	DW 2
-	DW 1
-	DW 4
-	DW 26 //system calls to read drive
-	DW 26
-	DW 24 //system call to swap the read value under the read address for the store
-	DW 1 //pushing the offset
-	DW 0x260
-	DW 9 //adding the offset to the write address
-	DW 21 //store
-@org 0x240
-.Page3
-	DW 0x8000 //body
-	DW 1 //pushing the offset again
-	DW 0x260
-	DW 10 //subtracting the offset
-	DW 24 //swaping the length above the read address
-	DW 8 //decrementing one from the length
-	DW 25 //copying the length so it stays after the branch
-	DW 1 //pushing the jump address
-	DW 0x230
-	DW 24 //swapping to get to the jump address under the length so the branch works
-	DW 17 //the branch
-	DW 2 //popping the jump address
-	DW 2 //popping the length (should be 0) so that the stack is entirely clean in theory
-	DW 27 //halt
-@org 0
 
 // Instruction-Address Table
 .InstructionAddressTable
@@ -114,7 +54,7 @@ DW .Halt
 
 .SystemCalls
 DW .Exit // 0
-DW .Beans // 1
+DW .Error2
 DW .DriveAddress //2
 DW .DriveWrite //3
 DW .DriveRead //4
@@ -166,10 +106,6 @@ DW 0 // stopper
 	DW 0
 
 .Constants
-	// Stores 0x69
-	.SixNine
-	DW 0x69
-
 	// Stores the limit of the memory for programs (inclusive)
 	.ProgramMemoryLimit
 	DW 0xFFFF
@@ -186,15 +122,7 @@ DW 0 // stopper
 
 	// Here should go stuff that would happen on first launch of the OS
 
-	// (Continues to .CheckPorts)
-
-.CheckPorts
-    OUT %254, 79
-    IN R1, %254
-    BZR .Warning0
-    OUT %254, 121
-    IN R1, %254
-    BZR .Warning1
+	// (Continues to .ScanFiles)
 
 .ScanFiles
 	// Write to .Files
@@ -253,13 +181,8 @@ DW 0 // stopper
 	// This is called whenever a program exits (HLT is called) or pointer reaches the limit of program memory
 
 	// Display loaded files
-	OUT %79, 0x46 // "F"
-	OUT %79, 0x69 // "i" // nice
-	OUT %79, 0x6C // "l"
-	OUT %79, 0x65 // "e"
-	OUT %79, 0x73 // "s"
+	OUT %79, 0x46 // "F" // abreviation for "Files"
 	OUT %79, 0x3A // ":"
-	OUT %79, 0x20 // " "
 
 	INC R1, .Files
 	.Loop
@@ -317,7 +240,6 @@ DW 0 // stopper
 	CAL .Execute
 
 	BRA .InterpretationLoop
-
 // Execute the instruction stored in memory utlizing the Instruction-Address Table for quicker branching.
 .Execute
     LOD R1, .Instruction
@@ -332,7 +254,6 @@ DW 0 // stopper
     CAL R2
 	.ExecEnd
 	RET
-
 // Instructions
 .Push
 	LOD R1, .Pointer
@@ -343,99 +264,84 @@ DW 0 // stopper
 	LOD R1, R2
 	PSH R1
 	RET
-
 .Pop
 	POP R0
 	RET
-
 .And
 	POP R2
 	POP R1
 	AND R1, R1, R2
 	PSH R1
 	RET
-
 .Or
 	POP R2
 	POP R1
 	OR R1, R1, R2
 	PSH R1
 	RET
-
 .Xor
 	POP R2
 	POP R1
 	XOR R1, R1, R2
 	PSH R1
 	RET
-
 .Not
 	POP R1
 	NOT R1, R1
 	PSH R1
 	RET
-
 .Increment
 	POP R1
 	INC R1, R1
 	PSH R1
 	RET
-
 .Decrement
 	POP R1
 	DEC R1, R1
 	PSH R1
 	RET
-
 .Add
 	POP R2
 	POP R1
 	ADD R1, R1, R2
 	PSH R1
 	RET
-
 .Subtract
 	POP R1 // -1
 	POP R2 // -2
 	SUB R1, R1, R2 // -1 - -2
 	PSH R1
 	RET
-
 .Multiply
 	POP R2
 	POP R1
 	MLT R1, R1, R2
 	PSH R1
 	RET
-
 .Divide
 	POP R2
 	POP R1
 	DIV R1, R1, R2
 	PSH R1
 	RET
-
 .Modulo
 	POP R2
 	POP R1
 	MOD R1, R1, R2
 	PSH R1
 	RET
-
 .ShiftLeft
 	POP R2
 	POP R1
 	BSL R1, R1, R2
 	PSH R1
 	RET
-
 .ShiftRight
 	POP R2
 	POP R1
 	BSR R1, R1, R2
 	PSH R1
 	RET
-
 .BranchIfZero // TODO verify to not jump outside program // TODO make jump relative
 	POP R1 // -1
 	POP R2 // -2
@@ -449,7 +355,6 @@ DW 0 // stopper
 	STR .Pointer, R1
 	.BRZEnd
 	RET
-
 .BranchIfNotZero
 	POP R1
 	POP R2
@@ -463,7 +368,6 @@ DW 0 // stopper
 	STR .Pointer, R1
 	.BNZEnd
 	RET
-
 .BranchIfPositive
 	POP R1
 	POP R2
@@ -477,7 +381,6 @@ DW 0 // stopper
 	STR .Pointer, R1
 	.BRPEnd
 	RET
-
 .BranchIfNegative
 	POP R1
 	POP R2
@@ -491,7 +394,6 @@ DW 0 // stopper
 	STR .Pointer, R1
 	.BRNEnd
 	RET
-
 .LoadMemory
 	POP R1
 
@@ -517,25 +419,21 @@ DW 0 // stopper
 	IN R1, %79
 	PSH R2
 	RET
-
 .Output
 	POP R2
 	OUT %79, R2
 	RET
-
 .Swap
 	POP R1
 	POP R2
 	PSH R1
 	PSH R2
 	RET
-
 .Copy
 	POP R1
 	PSH R1
 	PSH R1
 	RET
-
 .SystemCall
     POP R1
 
@@ -551,60 +449,26 @@ DW 0 // stopper
     CAL R2
 
 	RET
-
 .Halt
     // HLT (program)
 	BRA .SelectProgram
-
 // System Calls
 .Exit
 	// Exit (CPU)
 	// Halt the CPU, exiting the OS
 	HLT
-
-.Beans
-	// Output "Beans!"
-
-	PSH 0x42
-	// B
-	CAL .Output
-
-	PSH 0x65
-	// e
-	CAL .Output
-
-	PSH 0x61
-	// a
-	CAL .Output
-
-	PSH 0x6E
-	// n
-	CAL .Output
-
-	PSH 0x73
-	// s
-	CAL .Output
-
-	PSH 0x21
-	// !
-	CAL .Output
-
-	RET
-
 .DriveAddress
 	//Output Address
 	POP R2
 	OUT %121, R2
 	PSH R2
 	RET
-
 .DriveWrite
 	//Write
 	POP R2
 	OUT %123, R2
 	PSH R2
 	RET
-
 .DriveRead
 	//Read
 	IN R2, %123
@@ -614,25 +478,9 @@ DW 0 // stopper
     POP R1
     //Prints "Error (number)"
     OUT %79, 0x45 //E
-    OUT %79, 0x72 //r
-    OUT %79, 0x72 //r
-    OUT %79, 0x6F //o
-    OUT %79, 0x72 //r
-    OUT %79, 0x20 //space
     OUT %79, R1
     OUT %79, 0x0A
     BRA .SelectProgram
-.Warning
-    //Prints "Warning (number)"
-    OUT %79, 0x57 //W
-    OUT %79, 0x61 //a
-    OUT %79, 0x72 //r
-    OUT %79, 0x6E //n
-    OUT %79, 0x69 //i nice
-    OUT %79, 0x6E //n
-    OUT %79, 0x67 //g
-    OUT %79, 0x20 //space
-    RET
 .Error0
     PSH 0x30
     BRA .Error
@@ -645,13 +493,3 @@ DW 0 // stopper
 .Error3
     PSH 0x33
     BRA .Error
-.Warning0
-    BRA .Warning
-    OUT %79, 0x30
-    OUT %79, 0x0A
-    RET
-.Warning1
-    BRA .Warning
-    OUT %79, 0x31
-    OUT %79, 0x0A
-    RET

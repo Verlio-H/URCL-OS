@@ -1,6 +1,7 @@
 //
 // Tuke and Verlio's take at URCL OS
 //
+// This version has no programs installed
 
 BITS >= 16
 MINREG 2
@@ -8,74 +9,8 @@ MINRAM 1024
 RUN RAM
 
 BRA .Boot
-@org 0x200
 
 // Load files
-.Page1
-	DW 0x4142 // header // "B" - "BEAN CONSOLE v0.1" // 1 Page(s) (Writen by Tuke)
-
-	DW 1 //push
-	DW 0x20B // PROGRAM END(HALT) (JUMP TARGET)
-
-	DW 1 //push
-	DW 0x42 // "B"
-	DW 22 //input
-	DW 10 //subtract
-	DW 17 //branch if not zero // BRANCH TO END
-	DW 1 //push
-	DW 1 //Beans
-	DW 26 //system call
-
-	DW 27 // #0x20B
-@org 0x220
-.Page2
-	DW 0x4169 // header // 'i' - "Program Installer v0.1" // 2 Page(s) (Writen by Verlio)
-	DW 1 //push jump address for after verifying the header
-	DW 0x231 
-	DW 1 //push current read address
-	DW 0
-	DW 1 //pushes to push system calls
-	DW 2
-	DW 1
-	DW 4
-	DW 26 //system calls to set the address and to read
-	DW 26
-	DW 1 //pushing correct header
-	DW 0b10101010
-	DW 10 //subtracting and branching to verify header
-	DW 16
-	DW 27 //halt for if header is incorrect
-	DW 22 //inputing the length of the file
-	DW 24 //swap to put the length under the current read address
-	DW 7 //incriment the adress being read from
-	DW 1 //pushes to push system calls
-	DW 2
-	DW 1
-	DW 4
-	DW 26 //system calls to read drive
-	DW 26
-	DW 24 //system call to swap the read value under the read address for the store
-	DW 1 //pushing the offset
-	DW 0x260
-	DW 9 //adding the offset to the write address
-	DW 21 //store
-@org 0x240
-.Page3
-	DW 0x8000 //body
-	DW 1 //pushing the offset again
-	DW 0x260
-	DW 10 //subtracting the offset
-	DW 24 //swaping the length above the read address
-	DW 8 //decrementing one from the length
-	DW 25 //copying the length so it stays after the branch
-	DW 1 //pushing the jump address
-	DW 0x230
-	DW 24 //swapping to get to the jump address under the length so the branch works
-	DW 17 //the branch
-	DW 2 //popping the jump address
-	DW 2 //popping the length (should be 0) so that the stack is entirely clean in theory
-	DW 27 //halt
-@org 0
 
 // Instruction-Address Table
 .InstructionAddressTable
