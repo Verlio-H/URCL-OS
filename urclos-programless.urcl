@@ -41,11 +41,11 @@ DW .Output // 23
 DW .Swap //24
 DW .Copy //25
 DW .SystemCall // 26
-DW .Halt //27
-DW .Halt
-DW .Halt
-DW .Halt
-DW .Halt
+DW .SelectProgram //27
+DW .SelectProgram
+DW .SelectProgram
+DW .SelectProgram
+DW .SelectProgram
 
 .SystemCalls
 DW .Exit // 0
@@ -219,10 +219,22 @@ DW 0 // stopper
 
 	LSH R2, R2
 	ADD R1, R2, .Files
+	MOV R2, R1
 	LOD R1, R1
     BZR .Error3, R1 //file doesn't exist
 	
 	STR .Pointer, R1
+
+	//Storing the end of the file
+	MOV R1, R2
+	INC R1, R1
+	LOD R1, R1 //Getting the file info
+	AND R1, R1, 0xFC00 //getting the length of the file
+	BSR R1, R1, 5 //turning the pages length into word length
+	DEC R1, R1
+	LOD R2, R2 //loading the starting address of the file
+	ADD R2, R1, R2 //adding the starting address to the length
+	STR .End, R2 //storing that into .end as that is the end of the file
 
 	// (Continues to .InterpretationLoop)
 
@@ -486,9 +498,6 @@ DW 0 // stopper
 
 	RET
 
-.Halt
-    // HLT (program)
-	BRA .SelectProgram
 
 // System Calls
 .Exit

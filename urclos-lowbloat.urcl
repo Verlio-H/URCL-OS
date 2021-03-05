@@ -7,7 +7,6 @@
 // No warnings
 // Errors is abreviated to E and Files is abreviated to F
 
-
 BITS >= 16
 MINREG 2
 MINRAM 1024
@@ -46,11 +45,11 @@ DW .Output // 23
 DW .Swap //24
 DW .Copy //25
 DW .SystemCall // 26
-DW .Halt //27
-DW .Halt
-DW .Halt
-DW .Halt
-DW .Halt
+DW .SelectProgram //27
+DW .SelectProgram
+DW .SelectProgram
+DW .SelectProgram
+DW .SelectProgram
 
 .SystemCalls
 DW .Exit // 0
@@ -86,10 +85,6 @@ DW 0 // stopper
 
 	.Instruction
 	// Stores the next instruction to be executed.
-	DW 0
-
-	.End
-	// Stores the end of the program being executed.
 	DW 0
 
 	// File Scan Variables
@@ -173,8 +168,6 @@ DW 0 // stopper
 
     BRA .ScanFiles
 
-	// (Continues to .SelectProgram)
-
 .SelectProgram
     // Select Program to run
 	// This is called whenever a program exits (HLT is called) or pointer reaches the limit of program memory
@@ -223,10 +216,6 @@ DW 0 // stopper
 	BNZ +2
 	INC R1, R1
 
-	// Check if the pointer has reached the limit of the program and if so, exit (Return to select program).
-	LOD R2, .End
-	SUB R2, R1, R2
-	BRZ .SelectProgram
 
 	// Update PC
 	INC R1, R1
@@ -250,7 +239,7 @@ DW 0 // stopper
 	ADD R1, R1, R2
 
     LOD R2, R1
-    CAL R2
+    CAL R2 
 	.ExecEnd
 	RET
 // Instructions
@@ -448,9 +437,6 @@ DW 0 // stopper
     CAL R2
 
 	RET
-.Halt
-    // HLT (program)
-	BRA .SelectProgram
 // System Calls
 .Exit
 	// Exit (CPU)
