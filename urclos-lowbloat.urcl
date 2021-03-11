@@ -6,6 +6,7 @@
 // No Programs installed by default
 // No warnings
 // Errors is abreviated to E and Files is abreviated to F
+// Shell lite
 
 BITS >= 16
 MINREG 2
@@ -45,11 +46,11 @@ DW .Output // 23
 DW .Swap //24
 DW .Copy //25
 DW .SystemCall // 26
-DW .SelectProgram //27
-DW .SelectProgram
-DW .SelectProgram
-DW .SelectProgram
-DW .SelectProgram
+DW .ShellLite //27
+DW .Error4
+DW .Error4
+DW .Error4
+DW .Error4
 
 .SystemCalls
 DW .Exit // 0
@@ -124,14 +125,14 @@ DW 0 // stopper
 	LOD R2, .FileNumber
 	ADD R1, R2, .Files
 	STR .FileInfoPointer, R1
-    BRG .SelectProgram, .FileNumber, 9
+    BRG .ShellLite, .FileNumber, 9
 
     LOD R2, .ScanPointer
 	LOD R2, R2
 
 	AND R1, R2, 0xC000 // 1100 0000 0000 0000 // type of header
 
-    BZR .SelectProgram, R1 // If nothing quit scan process
+    BZR .ShellLite, R1 // If nothing quit scan process
 	// 00 = EMPTY; 01 = HEADER; 10 = BODY; 11 = ??
 
 	LOD R2, .ScanPointer
@@ -168,11 +169,29 @@ DW 0 // stopper
 
     BRA .ScanFiles
 
-.SelectProgram
-    // Select Program to run
-	// This is called whenever a program exits (HLT is called) or pointer reaches the limit of program memory
+.ShellLite
+	//This is the terminal
+	//This is jumped to whenever a program ends and when the program starts after it scans files
+	//(Shell lite included in lowbloat)
+	OUT %79, 0x3E //>
+	OUT %79, 0x20 //space
+	IN R1, %79
+	BRE .ClearConsole, R1, 0x63
+	BRE .ListPrograms, R1, 0x6C
+	BRE .RunProgram, R1, 0x2F
+	BRE .Exit, R1, 0x65
+	IMM R1, 0x34
+	BRA .Error5
+
+.ClearConsole
+	OUT %79, 0x0C
+	BRA .ShellLite
+
+.ListPrograms
+    // List programs installed
 
 	// Display loaded files
+	OUT %79, 0x0A // \n // to put on a new line
 	OUT %79, 0x46 // "F" // abreviation for "Files"
 	OUT %79, 0x3A // ":"
 
@@ -192,8 +211,9 @@ DW 0 // stopper
 		ADD R1, R1, 2
 		BRA .Loop
 	.EndLoop
+	BRA .ShellLiteLite
 
-
+.RunProgram
 	IN R2, %79
     AND R2, R2, 0x0F
     BRG .Error3, R2, 9 //file doesn't exist
@@ -204,7 +224,7 @@ DW 0 // stopper
     BZR .Error3, R1 //file doesn't exist
 	
 	STR .Pointer, R1
-
+	OUT %79, 0x0A //new line for program
 	// (Continues to .InterpretationLoop)
 
 .InterpretationLoop
@@ -428,7 +448,6 @@ DW 0 // stopper
     AND R1, R1, 0x0F
 	// Only 16 system calls? (For now?)
 	BRG .Error2, R1, 4 //system call does not exist
-	BRZ .SelectProgram
 
 	IMM R2, .SystemCalls
 	ADD R1, R1, R2
@@ -461,10 +480,11 @@ DW 0 // stopper
 	RET
 .Error
     //Prints "Error (number)"
+	OUT %79, 0x0A
     OUT %79, 0x45 //E
     OUT %79, R1
     OUT %79, 0x0A
-    BRA .SelectProgram
+    BRA .ShellLiteLite
 .Error0
     IMM R1, 0x30
     BRA .Error
@@ -477,3 +497,9 @@ DW 0 // stopper
 .Error3
     IMM R1, 0x33
     BRA .Error
+.Error4
+	IMM R1, 0x34
+	BRA .Error
+.Error5
+	IMM R1, 0x35
+	BRA .Error

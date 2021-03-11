@@ -1,0 +1,57 @@
+DW 0 //instruction address table
+DW .Push // 1
+DW .Pop // 2
+DW .And // 3
+DW .Or // 4
+DW .Xor // 5
+DW .Not // 6
+DW .Increment // 7
+DW .Decrement // 8
+DW .Add // 9
+DW .Subtract // 10
+DW .Multiply // 11
+DW .Divide // 12
+DW .Modulo // 13
+DW .ShiftLeft // 14
+DW .ShiftRight // 15
+DW .BranchIfZero // 16
+DW .BranchIfNotZero // 17
+DW .BranchIfPositive // 18
+DW .BranchIfNegative // 19
+DW .LoadMemory // 20
+DW .StoreMemory // 21
+DW .Input // 22
+DW .Output // 23
+DW .Swap //24
+DW .Copy //25
+DW .SystemCall // 26
+DW .SelectProgram //27
+DW .Error4
+DW .Error4
+DW .Error4
+DW .Error4
+DW .Exit // 0 //system calls
+DW .Beans // 1
+DW .DriveAddress //2
+DW .DriveWrite //3
+DW .DriveRead //4
+DD 0 //files
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DD 0
+DW 0
+DW 0 //booted
+DW 0 //pointer
+DW 0 //instruction
+DW 0 //end
+DW 0x0050 //scan pointer, should be equal to kernel mem lim on startup
+DW 0 //filenumber
+DW 0 //file info pointer
+DW 0x69 //sixnine
+DW 0x0050 //kernel mem lim

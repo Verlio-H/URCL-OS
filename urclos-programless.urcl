@@ -42,10 +42,10 @@ DW .Swap //24
 DW .Copy //25
 DW .SystemCall // 26
 DW .SelectProgram //27
-DW .SelectProgram
-DW .SelectProgram
-DW .SelectProgram
-DW .SelectProgram
+DW .Error4
+DW .Error4
+DW .Error4
+DW .Error4
 
 .SystemCalls
 DW .Exit // 0
@@ -587,6 +587,9 @@ DW 0 // stopper
 .Error3
     IMM R1, 0x33
     BRA .Error
+.Error4
+	IMM R1, 0x34
+	BRA .Error
 .Warning0
     BRA .Warning
     OUT %79, 0x30
