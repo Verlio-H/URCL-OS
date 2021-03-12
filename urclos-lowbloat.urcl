@@ -9,7 +9,7 @@
 // Shell lite
 
 BITS >= 16
-MINREG 2
+MINREG 3
 MINRAM 1024
 RUN RAM
 
@@ -141,13 +141,12 @@ DW 0 // stopper
 
 	AND R1, R2, 0x3F00 // 0011 1111 0000 0000 // length
 	BSL R1, R1, 2
-	PSH R1 // 1111 1100 0000 0000 // length (to the left)
+	MOV R3, R1 // 1111 1100 0000 0000 // length (to the left)
 
 	// Directory is 0 // 0000 0011 0000 0000 // directory
 
 	AND R1, R2, 0x00FF // 0000 0000 1111 1111 // name
-	POP R2
-	OR R1, R1, R2 // 1111 1100 1111 1111
+	OR R1, R1, R3 // 1111 1100 1111 1111
 
 	LOD R2, .FileInfoPointer
     INC R2, R2

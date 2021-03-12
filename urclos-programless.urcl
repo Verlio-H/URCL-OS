@@ -4,7 +4,7 @@
 // this version has no programs installed
 
 BITS >= 16
-MINREG 2
+MINREG 3
 MINRAM 1024
 RUN RAM
 
@@ -152,13 +152,12 @@ DW 0 // stopper
 
 	AND R1, R2, 0x3F00 // 0011 1111 0000 0000 // length
 	BSL R1, R1, 2
-	PSH R1 // 1111 1100 0000 0000 // length (to the left)
+	MOV R3, R1 // 1111 1100 0000 0000 // length (to the left)
 
 	// Directory is 0 // 0000 0011 0000 0000 // directory
 
 	AND R1, R2, 0x00FF // 0000 0000 1111 1111 // name
-	POP R2
-	OR R1, R1, R2 // 1111 1100 1111 1111
+	OR R1, R1, R3 // 1111 1100 1111 1111
 
 	LOD R2, .FileInfoPointer
     INC R2, R2
@@ -284,7 +283,7 @@ RET
     BZR .Error3, R1 //file doesn't exist
 	
 	STR .Pointer, R1
-	
+
 	//Storing the end of the file
 	MOV R1, R2
 	INC R1, R1
@@ -571,30 +570,12 @@ RET
 .Beans
 	// Output "Beans!"
 
-	PSH 0x42
-	// B
-	CAL .Output
-
-	PSH 0x65
-	// e
-	CAL .Output
-
-	PSH 0x61
-	// a
-	CAL .Output
-
-	PSH 0x6E
-	// n
-	CAL .Output
-
-	PSH 0x73
-	// s
-	CAL .Output
-
-	PSH 0x21
-	// !
-	CAL .Output
-
+	OUT %79, 0x42 //B
+	OUT %79, 0x65 //e
+	PSH %79, 0x61 //a
+	PSH %79, 0x6E //n
+	PSH %79, 0x73 //s
+	PSH %79, 0x21 //!
 	RET
 
 .DriveAddress
