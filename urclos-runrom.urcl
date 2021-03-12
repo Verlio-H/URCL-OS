@@ -32,14 +32,14 @@ RUN ROM
 	ADD R1, R2, 38
 	STR 65, R1 //fileinfopointer
     LOD R1, 64
-    BRG .SelectProgram, R1, 9
+    BRG .Shell, R1, 9
 
     LOD R2, 63
 	LOD R2, R2
 
 	AND R1, R2, 0xC000 // 1100 0000 0000 0000 // type of header
 
-    BZR .SelectProgram, R1 // If nothing quit scan process
+    BZR .Shell, R1 // If nothing quit scan process
 	// 00 = EMPTY; 01 = HEADER; 10 = BODY; 11 = ??
 
 	LOD R2, 63
@@ -76,10 +76,72 @@ RUN ROM
 
     BRA .ScanFiles
 
+.Shell
+OUT %79, 0x3E //>
+OUT %79, 0x20 //space
+PSH 0
+.ShellLoop
+IN R1, %79
+BRE .ShellLoopEnd, R1, 0x20
+BRE .ShellLoopEnd, R1, 0x0A
+PSH R1
+BRE .SlashCommands, R1, 0x2F
+BRA .ShellLoop
+.ShellLoopEnd
+POP R1
+BRE .Clear, R1, 0x72
+BRE .Ls, R1, 0x73
+BRE .Exit, R1, 0x74
+.ShellEnd2
+CAL .ShellEnd
+BRA .Error5
 
-.SelectProgram
-    // Select Program to run
-	// This is called whenever a program exits (HLT is called) or pointer reaches the limit of program memory
+.Clear
+POP R1
+BNE .Error5, R1, 0x61
+POP R1
+BNE .Error5, R1, 0x65
+POP R1
+BNE .Error5, R1, 0x6C
+POP R1
+BNE .Error5, R1, 0x63
+CAL .ShellEnd
+OUT %79, 0x0C //clear console
+BRA .Shell
+
+.Ls
+POP R1
+BNE .Error5, R1, 0x6C
+CAL .ShellEnd
+BRA .ListPrograms
+
+.Exit
+POP R1
+BNE .Error5, R1, 0x69 //nice
+POP R1
+BNE .Error5, R1, 0x78
+POP R1
+BNE .Error5, R1, 0x65
+HLT
+
+.SlashCommands
+POP R1
+BNE .Error5, R1, 0x2F
+POP R1
+BNE .Error5, R1, 0x2E
+CAL .ShellEnd
+BRA .RunProgram
+
+.ShellEnd
+POP R1
+OR R1, R1, R1
+BNZ .ShellEnd //this is to clean the stack
+RET
+
+
+.ListPrograms
+    // List Programs to run
+	// This is called with the ls command
 
 	// Display loaded files
 	OUT %79, 0x46 // "F"
@@ -94,7 +156,7 @@ RUN ROM
 	.Loop
     	LOD R2, R1 // load file header
 		// check if file
-		BZR .EndLoop, R2 // exit if zero (no file)
+		BZR .Shell, R2 // exit if zero (no file)
 
 		// continue if file
 
@@ -105,9 +167,8 @@ RUN ROM
 
 		ADD R1, R1, 2
 		BRA .Loop
-	.EndLoop
 
-
+.RunProgram
 	IN R2, %79
     AND R2, R2, 0x0F
     BRG .Error3, R2, 9 //file doesn't exist
@@ -145,7 +206,7 @@ RUN ROM
 	// Check if the pointer has reached the limit of the program and if so, exit (Return to select program).
 	LOD R2, 62
 	SUB R2, R1, R2
-	BRZ .SelectProgram
+	BRZ .Shell
 
 	// Update PC
 	INC R1, R1
@@ -367,8 +428,13 @@ RUN ROM
 .Swap
 	POP R1
 	POP R2
-	PSH R1
+	DEC R1
+	MOV R3, VSP //save return stack address
+	SUB VSP, VSP, R1 //subtract to reach the swap section
+	POP R1
 	PSH R2
+	MOV VSP, R3
+	PSH R1
 	RET
 
 .Copy
@@ -383,7 +449,7 @@ RUN ROM
     AND R1, R1, 0x0F
 	// Only 16 system calls? (For now?)
 	BRG .Error2, R1, 4 //system call does not exist
-	BRZ .SelectProgram
+	BRZ .Shell
 
 	IMM R2, 33
 	ADD R1, R1, R2
@@ -457,7 +523,7 @@ RUN ROM
     OUT %79, 0x20 //space
     OUT %79, R1
     OUT %79, 0x0A
-    BRA .SelectProgram
+    BRA .Shell
 .Warning
     //Prints "Warning (number)"
     OUT %79, 0x57 //W

@@ -25,7 +25,7 @@ DW .Output // 23
 DW .Swap //24
 DW .Copy //25
 DW .SystemCall // 26
-DW .SelectProgram //27
+DW .Shell //27
 DW .Error4
 DW .Error4
 DW .Error4

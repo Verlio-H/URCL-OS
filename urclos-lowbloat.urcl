@@ -434,8 +434,13 @@ DW 0 // stopper
 .Swap
 	POP R1
 	POP R2
-	PSH R1
+	DEC R1
+	MOV R3, VSP //save return stack address
+	SUB VSP, VSP, R1 //subtract to reach the swap section
+	POP R1
 	PSH R2
+	MOV VSP, R3
+	PSH R1
 	RET
 .Copy
 	POP R1
