@@ -643,10 +643,10 @@ RET
 
 	OUT %79, 0x42 //B
 	OUT %79, 0x65 //e
-	PSH %79, 0x61 //a
-	PSH %79, 0x6E //n
-	PSH %79, 0x73 //s
-	PSH %79, 0x21 //!
+	OUT %79, 0x61 //a
+	OUT %79, 0x6E //n
+	OUT %79, 0x73 //s
+	OUT %79, 0x21 //!
 	RET
 
 .DriveAddress
