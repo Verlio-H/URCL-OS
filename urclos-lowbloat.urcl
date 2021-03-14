@@ -61,16 +61,26 @@ DW .DriveRead //4
 
 .Files
 // Space for File Info
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
 DW 0 // stopper
 
 .SpecialVariables
@@ -112,8 +122,7 @@ DW 0 // stopper
 
 .Boot
     LOD R1, .Booted
-    OR R1, R1, R1
-    BNZ .CheckPorts
+    BZN .ScanFiles, R1
     STR .Booted, 1
 
 	// Here should go stuff that would happen on first launch of the OS
@@ -125,14 +134,12 @@ DW 0 // stopper
 	LOD R2, .FileNumber
 	ADD R1, R2, .Files
 	STR .FileInfoPointer, R1
-    BRG .ShellLite, .FileNumber, 9
 
     LOD R2, .ScanPointer
 	LOD R2, R2
+	AND R3, R2, 0xC000 // 1100 0000 0000 0000 // type of header
 
-	AND R1, R2, 0xC000 // 1100 0000 0000 0000 // type of header
-
-    BZR .ShellLite, R1 // If nothing quit scan process
+    BZR .ShellLite, R3 // If nothing quit scan process
 	// 00 = EMPTY; 01 = HEADER; 10 = BODY; 11 = ??
 
 	LOD R2, .ScanPointer
@@ -163,7 +170,7 @@ DW 0 // stopper
 
 	STR .ScanPointer, R1
 	LOD R1, .FileNumber
-	ADD R1, R1, 0x2
+	ADD R1, R1, 2
 	STR .FileNumber, R1
 
     BRA .ScanFiles
@@ -175,6 +182,7 @@ DW 0 // stopper
 	OUT %79, 0x3E //>
 	OUT %79, 0x20 //space
 	IN R1, %79
+	OUT %79, R1
 	BRE .ClearConsole, R1, 0x63
 	BRE .ListPrograms, R1, 0x6C
 	BRE .RunProgram, R1, 0x2F
@@ -198,7 +206,7 @@ DW 0 // stopper
 	.Loop
     	LOD R2, R1 // load file header
 		// check if file
-		BZR .EndLoop, R2 // exit if zero (no file)
+	    BZR .EndLoop, R2 // exit if zero (no file)
 
 		// continue if file
 
@@ -210,10 +218,12 @@ DW 0 // stopper
 		ADD R1, R1, 2
 		BRA .Loop
 	.EndLoop
-	BRA .ShellLiteLite
+	OUT %79, 0x0A
+	BRA .ShellLite
 
 .RunProgram
 	IN R2, %79
+	OUT %79, R2
     AND R2, R2, 0x0F
     BRG .Error3, R2, 9 //file doesn't exist
 
@@ -222,6 +232,7 @@ DW 0 // stopper
 	LOD R1, R1
     BZR .Error3, R1 //file doesn't exist
 	
+	DEC R1, R1
 	STR .Pointer, R1
 	OUT %79, 0x0A //new line for program
 	// (Continues to .InterpretationLoop)
@@ -231,13 +242,13 @@ DW 0 // stopper
 
 	// Check if instruction pointer is looking at metadata and if so, skip word
 	LOD R1, .Pointer
+	INC R1, R1
     AND R2, R1, 0x1F
-	BNZ +2
+	BZN .stuff, R2
 	INC R1, R1
 
-
+    .stuff
 	// Update PC
-	INC R1, R1
 	STR .Pointer, R1
 
 	// Load .Instruction
@@ -251,8 +262,8 @@ DW 0 // stopper
 .Execute
     LOD R1, .Instruction
 
-    AND R1, R1, 0x1F
-	BRZ .ExecEnd
+    AND R3, R1, 0x1F
+	BZR .ExecEnd, R3
 
 	IMM R2, .InstructionAddressTable
 	ADD R1, R1, R2
@@ -268,8 +279,7 @@ DW 0 // stopper
 	STR .Pointer, R1
 
 	LOD R2, R1
-	LOD R1, R2
-	PSH R1
+	PSH R2
 	RET
 .Pop
 	POP R0
@@ -352,8 +362,7 @@ DW 0 // stopper
 .BranchIfZero // TODO verify to not jump outside program // TODO make jump relative
 	POP R1 // -1
 	POP R2 // -2
-	OR R1, R1, R1
-	BNZ .BRZEnd // Branches depending on -1, to -2
+	BZN .BRZEnd, R1 // Branches depending on -1, to -2
     LOD R1, .KernelMemoryLimit
 	BRL .Error1, R2, R1 //trying to jump to kernel
 	LOD R1, .Pointer
@@ -365,8 +374,7 @@ DW 0 // stopper
 .BranchIfNotZero
 	POP R1
 	POP R2
-    OR R1, R1, R1
-	BRZ .BNZEnd
+	BZR .BNZEnd, R1
     LOD R1, .KernelMemoryLimit
 	BRL .Error1, R2, R1 //trying to jump to kernel
 	LOD R1, .Pointer
@@ -432,7 +440,7 @@ DW 0 // stopper
 	RET
 .Swap
 	POP R1
-	POP R2
+	POP R2 
 	DEC R1
 	MOV R3, VSP //save return stack address
 	SUB VSP, VSP, R1 //subtract to reach the swap section
@@ -488,7 +496,7 @@ DW 0 // stopper
     OUT %79, 0x45 //E
     OUT %79, R1
     OUT %79, 0x0A
-    BRA .ShellLiteLite
+    BRA .ShellLite
 .Error0
     IMM R1, 0x30
     BRA .Error
