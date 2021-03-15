@@ -56,16 +56,26 @@ DW .DriveRead //4
 
 .Files
 // Space for File Info
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
-DD 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
 DW 0 // stopper
 
 .SpecialVariables
@@ -115,35 +125,33 @@ DW 0 // stopper
 
 .Boot
     LOD R1, .Booted
-    OR R1, R1, R1
-    BNZ .CheckPorts
+    BZN .CheckPorts, R1
     STR .Booted, 1
 
 	// Here should go stuff that would happen on first launch of the OS
 
 	// (Continues to .CheckPorts)
-
+	BRA .CheckPorts
 .CheckPorts
     OUT %254, 79
     IN R1, %254
-    BZR .Warning0
+    BZR .Warning0, R1
     OUT %254, 121
     IN R1, %254
-    BZR .Warning1
+    BZR .Warning1, R1
 
 .ScanFiles
 	// Write to .Files
 	LOD R2, .FileNumber
 	ADD R1, R2, .Files
 	STR .FileInfoPointer, R1
-    BRG .Shell, .FileNumber, 9
 
     LOD R2, .ScanPointer
 	LOD R2, R2
 
-	AND R1, R2, 0xC000 // 1100 0000 0000 0000 // type of header
+	AND R3, R2, 0xC000 // 1100 0000 0000 0000 // type of header
 
-    BZR .Shell, R1 // If nothing quit scan process
+    BZR .Shell, R3 // If nothing quit scan process
 	// 00 = EMPTY; 01 = HEADER; 10 = BODY; 11 = ??
 
 	LOD R2, .ScanPointer
@@ -174,7 +182,7 @@ DW 0 // stopper
 
 	STR .ScanPointer, R1
 	LOD R1, .FileNumber
-	ADD R1, R1, 0x2
+	ADD R1, R1, 2
 	STR .FileNumber, R1
 
     BRA .ScanFiles
@@ -185,6 +193,7 @@ OUT %79, 0x20 //space
 PSH 0
 .ShellLoop
 IN R1, %79
+OUT %79, R1
 BRE .ShellLoopEnd, R1, 0x20
 BRE .ShellLoopEnd, R1, 0x0A
 PSH R1
@@ -237,8 +246,7 @@ BRA .RunProgram
 
 .ShellEnd
 POP R1
-OR R1, R1, R1
-BNZ .ShellEnd //this is to clean the stack
+BZN .ShellEnd, R1 //this is to clean the stack
 RET
 
 
@@ -259,7 +267,7 @@ RET
 	.Loop
     	LOD R2, R1 // load file header
 		// check if file
-		BZR .Shell, R2 // exit if zero (no file)
+		BZR .LoopEnd, R2 // exit if zero (no file)
 
 		// continue if file
 
@@ -270,9 +278,12 @@ RET
 
 		ADD R1, R1, 2
 		BRA .Loop
-
+	.LoopEnd
+	OUT %79, 0x0A
+	BRA .Shell
 .RunProgram
 	IN R2, %79
+	OUT %79, R2
     AND R2, R2, 0x0F
     BRG .Error3, R2, 9 //file doesn't exist
 
@@ -282,13 +293,15 @@ RET
 	LOD R1, R1
     BZR .Error3, R1 //file doesn't exist
 	
+	OUT %79, 0x0A
+	DEC R1, R1
 	STR .Pointer, R1
 
 	//Storing the end of the file
 	MOV R1, R2
 	INC R1, R1
 	LOD R1, R1 //Getting the file info
-	AND R1, R1, 0xFC00 //getting the length of the file
+	AND R1, R1, 0xFC00 //getting the length of the file //1111 1100 0000 0000
 	BSR R1, R1, 5 //turning the pages length into word length
 	DEC R1, R1
 	LOD R2, R2 //loading the starting address of the file
@@ -301,39 +314,38 @@ RET
 
 	// Check if instruction pointer is looking at metadata and if so, skip word
 	LOD R1, .Pointer
+	INC R1, R1
     AND R2, R1, 0x1F
-	BNZ +2
+	BZN .stuff, R2
 	INC R1, R1
 
-	// Check if the pointer has reached the limit of the program and if so, exit (Return to select program).
+    .stuff
 	LOD R2, .End
-	SUB R2, R1, R2
-	BRZ .Shell
-
+    SUB R2, R1, R2
+    BZR .Shell, R2
 	// Update PC
-	INC R1, R1
 	STR .Pointer, R1
 
 	// Load .Instruction
 	LOD R2, R1
+	OUT %79, R2
 	STR .Instruction, R2
 
 	CAL .Execute
 
 	BRA .InterpretationLoop
-
 // Execute the instruction stored in memory utlizing the Instruction-Address Table for quicker branching.
 .Execute
     LOD R1, .Instruction
 
-    AND R1, R1, 0x1F
-	BRZ .ExecEnd
+    AND R3, R1, 0x1F
+	BZR .ExecEnd, R3
 
 	IMM R2, .InstructionAddressTable
 	ADD R1, R1, R2
 
     LOD R2, R1
-    CAL R2
+    CAL R2 
 	.ExecEnd
 	RET
 
@@ -344,10 +356,9 @@ RET
 	STR .Pointer, R1
 
 	LOD R2, R1
-	LOD R1, R2
-	PSH R1
+	PSH R2
 	RET
-
+	
 .Pop
 	POP R0
 	RET
@@ -443,8 +454,7 @@ RET
 .BranchIfZero // TODO verify to not jump outside program // TODO make jump relative
 	POP R1 // -1
 	POP R2 // -2
-	OR R1, R1, R1
-	BNZ .BRZEnd // Branches depending on -1, to -2
+	BZN .BRZEnd, R1 // Branches depending on -1, to -2
     LOD R1, .KernelMemoryLimit
 	BRL .Error1, R2, R1 //trying to jump to kernel
 	LOD R1, .Pointer
@@ -457,8 +467,7 @@ RET
 .BranchIfNotZero
 	POP R1
 	POP R2
-    OR R1, R1, R1
-	BRZ .BNZEnd
+	BZR .BNZEnd, R1
     LOD R1, .KernelMemoryLimit
 	BRL .Error1, R2, R1 //trying to jump to kernel
 	LOD R1, .Pointer
@@ -551,7 +560,7 @@ RET
     AND R1, R1, 0x0F
 	// Only 16 system calls? (For now?)
 	BRG .Error2, R1, 4 //system call does not exist
-	BRZ .Shell
+	BZR .Shell, R1
 
 	IMM R2, .SystemCalls
 	ADD R1, R1, R2
@@ -629,10 +638,14 @@ RET
     IMM R1, 0x32
     BRA .Error
 .Error3
+	OUT %79, 0x0A
     IMM R1, 0x33
     BRA .Error
 .Error4
 	IMM R1, 0x34
+	BRA .Error
+.Error5
+	IMM R1, 0x35
 	BRA .Error
 .Warning0
     BRA .Warning
