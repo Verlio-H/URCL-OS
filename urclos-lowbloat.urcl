@@ -84,415 +84,415 @@ DW 0
 DW 0 // stopper
 
 .SpecialVariables
-	// OS Variables
-	// Stores whether the OS has already booted.
-	.Booted
-	DW 0
+    // OS Variables
+    // Stores whether the OS has already booted.
+    .Booted
+    DW 0
 
-	// Interpreter Variables
-	.Pointer
-	// Stores the address of the next instruction to be executed.
-	DW 0
+    // Interpreter Variables
+    .Pointer
+    // Stores the address of the next instruction to be executed.
+    DW 0
 
-	.Instruction
-	// Stores the next instruction to be executed.
-	DW 0
+    .Instruction
+    // Stores the next instruction to be executed.
+    DW 0
 
-	// File Scan Variables
-	.ScanPointer
-	// Stores the address for the pointer scanning the storage for files
-	DW .KernelMemoryLimit
+    // File Scan Variables
+    .ScanPointer
+    // Stores the address for the pointer scanning the storage for files
+    DW .KernelMemoryLimit
 
-	.FileNumber
-	// Stores the number of the file currently scanning (is multiplied by two. Ex: File 3 => FileNumber = 6)
-	DW 0
+    .FileNumber
+    // Stores the number of the file currently scanning (is multiplied by two. Ex: File 3 => FileNumber = 6)
+    DW 0
 
-	.FileInfoPointer
-	// Stores the pointer of the File Info Double Word for the file currently scanning
-	DW 0
+    .FileInfoPointer
+    // Stores the pointer of the File Info Double Word for the file currently scanning
+    DW 0
 
 .Constants
-	// Stores the limit of the memory for programs (inclusive)
-	.ProgramMemoryLimit
-	DW 0xFFFF
+    // Stores the limit of the memory for programs (inclusive)
+    .ProgramMemoryLimit
+    DW 0xFFFF
 
-	// Stores the limit of the memory for the kernel (exclusive)
-	.KernelMemoryLimit
-	DW 0x0300
+    // Stores the limit of the memory for the kernel (exclusive)
+    .KernelMemoryLimit
+    DW 0x0300
 
 .Boot
     LOD R1, .Booted
     BZN .ScanFiles, R1
     STR .Booted, 1
 
-	// Here should go stuff that would happen on first launch of the OS
+    // Here should go stuff that would happen on first launch of the OS
 
-	// (Continues to .ScanFiles)
+    // (Continues to .ScanFiles)
 
 .ScanFiles
-	// Write to .Files
-	LOD R2, .FileNumber
-	ADD R1, R2, .Files
-	STR .FileInfoPointer, R1
+    // Write to .Files
+    LOD R2, .FileNumber
+    ADD R1, R2, .Files
+    STR .FileInfoPointer, R1
 
     LOD R2, .ScanPointer
-	LOD R2, R2
-	AND R3, R2, 0xC000 // 1100 0000 0000 0000 // type of header
+    LOD R2, R2
+    AND R3, R2, 0xC000 // 1100 0000 0000 0000 // type of header
 
     BZR .ShellLite, R3 // If nothing quit scan process
-	// 00 = EMPTY; 01 = HEADER; 10 = BODY; 11 = ??
+    // 00 = EMPTY; 01 = HEADER; 10 = BODY; 11 = ??
 
-	LOD R2, .ScanPointer
-	STR R1, R2 // raw address
+    LOD R2, .ScanPointer
+    STR R1, R2 // raw address
     LOD R2, R2
 
-	AND R1, R2, 0x3F00 // 0011 1111 0000 0000 // length
-	BSL R1, R1, 2
-	MOV R3, R1 // 1111 1100 0000 0000 // length (to the left)
+    AND R1, R2, 0x3F00 // 0011 1111 0000 0000 // length
+    BSL R1, R1, 2
+    MOV R3, R1 // 1111 1100 0000 0000 // length (to the left)
 
-	// Directory is 0 // 0000 0011 0000 0000 // directory
+    // Directory is 0 // 0000 0011 0000 0000 // directory
 
-	AND R1, R2, 0x00FF // 0000 0000 1111 1111 // name
-	OR R1, R1, R3 // 1111 1100 1111 1111
+    AND R1, R2, 0x00FF // 0000 0000 1111 1111 // name
+    OR R1, R1, R3 // 1111 1100 1111 1111
 
-	LOD R2, .FileInfoPointer
+    LOD R2, .FileInfoPointer
     INC R2, R2
-	STR R2, R1
+    STR R2, R1
 
-	// Update .ScanPointer for the next cycle and increment .FileNumber
-	.ContinueMoment
-	LOD R1, .ScanPointer
-	LOD R2, R1
+    // Update .ScanPointer for the next cycle and increment .FileNumber
+    .ContinueMoment
+    LOD R1, .ScanPointer
+    LOD R2, R1
     AND R2, R2, 0x3F00 // 0011 1111 0000 0000 // length
 
-	BSR R2, R2, 3 //length in words
-	ADD R1, R1, R2
+    BSR R2, R2, 3 //length in words
+    ADD R1, R1, R2
 
-	STR .ScanPointer, R1
-	LOD R1, .FileNumber
-	ADD R1, R1, 2
-	STR .FileNumber, R1
+    STR .ScanPointer, R1
+    LOD R1, .FileNumber
+    ADD R1, R1, 2
+    STR .FileNumber, R1
 
     BRA .ScanFiles
 
 .ShellLite
-	//This is the terminal
-	//This is jumped to whenever a program ends and when the program starts after it scans files
-	//(Shell lite included in lowbloat)
-	OUT %79, 0x3E //>
-	OUT %79, 0x20 //space
-	IN R1, %79
-	OUT %79, R1
-	BRE .ClearConsole, R1, 0x63
-	BRE .ListPrograms, R1, 0x6C
-	BRE .RunProgram, R1, 0x2F
-	BRE .Exit, R1, 0x65
-	IMM R1, 0x34
-	BRA .Error5
+    //This is the terminal
+    //This is jumped to whenever a program ends and when the program starts after it scans files
+    //(Shell lite included in lowbloat)
+    OUT %79, 0x3E //>
+    OUT %79, 0x20 //space
+    IN R1, %79
+    OUT %79, R1
+    BRE .ClearConsole, R1, 0x63
+    BRE .ListPrograms, R1, 0x6C
+    BRE .RunProgram, R1, 0x2F
+    BRE .Exit, R1, 0x65
+    IMM R1, 0x34
+    BRA .Error5
 
 .ClearConsole
-	OUT %79, 0x0C
-	BRA .ShellLite
+    OUT %79, 0x0C
+    BRA .ShellLite
 
 .ListPrograms
     // List programs installed
 
-	// Display loaded files
-	OUT %79, 0x0A // \n // to put on a new line
-	OUT %79, 0x46 // "F" // abreviation for "Files"
-	OUT %79, 0x3A // ":"
+    // Display loaded files
+    OUT %79, 0x0A // \n // to put on a new line
+    OUT %79, 0x46 // "F" // abreviation for "Files"
+    OUT %79, 0x3A // ":"
 
-	INC R1, .Files
-	.Loop
-    	LOD R2, R1 // load file header
-		// check if file
-	    BZR .EndLoop, R2 // exit if zero (no file)
+    INC R1, .Files
+    .Loop
+        LOD R2, R1 // load file header
+        // check if file
+        BZR .EndLoop, R2 // exit if zero (no file)
 
-		// continue if file
+        // continue if file
 
-		AND R2, R2, 0x00FF
-		OUT %79, R2 // name
-		OUT %79, 0x2C // ","
-		OUT %79, 0x20 // " "
+        AND R2, R2, 0x00FF
+        OUT %79, R2 // name
+        OUT %79, 0x2C // ","
+        OUT %79, 0x20 // " "
 
-		ADD R1, R1, 2
-		BRA .Loop
-	.EndLoop
-	OUT %79, 0x0A
-	BRA .ShellLite
+        ADD R1, R1, 2
+        BRA .Loop
+    .EndLoop
+    OUT %79, 0x0A
+    BRA .ShellLite
 
 .RunProgram
-	IN R2, %79
-	OUT %79, R2
+    IN R2, %79
+    OUT %79, R2
     AND R2, R2, 0x0F
     BRG .Error3, R2, 9 //file doesn't exist
 
-	LSH R2, R2
-	ADD R1, R2, .Files
-	LOD R1, R1
+    LSH R2, R2
+    ADD R1, R2, .Files
+    LOD R1, R1
     BZR .Error3, R1 //file doesn't exist
-	
-	DEC R1, R1
-	STR .Pointer, R1
-	OUT %79, 0x0A //new line for program
-	// (Continues to .InterpretationLoop)
+    
+    DEC R1, R1
+    STR .Pointer, R1
+    OUT %79, 0x0A //new line for program
+    // (Continues to .InterpretationLoop)
 
 .InterpretationLoop
-	// Interpretation Loop - Run the desired program calling .Execute per instruction
+    // Interpretation Loop - Run the desired program calling .Execute per instruction
 
-	// Check if instruction pointer is looking at metadata and if so, skip word
-	LOD R1, .Pointer
-	INC R1, R1
+    // Check if instruction pointer is looking at metadata and if so, skip word
+    LOD R1, .Pointer
+    INC R1, R1
     AND R2, R1, 0x1F
-	BZN .stuff, R2
-	INC R1, R1
+    BZN .stuff, R2
+    INC R1, R1
 
     .stuff
-	// Update PC
-	STR .Pointer, R1
+    // Update PC
+    STR .Pointer, R1
 
-	// Load .Instruction
-	LOD R2, R1
-	STR .Instruction, R2
+    // Load .Instruction
+    LOD R2, R1
+    STR .Instruction, R2
 
-	CAL .Execute
+    CAL .Execute
 
-	BRA .InterpretationLoop
+    BRA .InterpretationLoop
 // Execute the instruction stored in memory utlizing the Instruction-Address Table for quicker branching.
 .Execute
     LOD R1, .Instruction
 
     AND R3, R1, 0x1F
-	BZR .ExecEnd, R3
+    BZR .ExecEnd, R3
 
-	IMM R2, .InstructionAddressTable
-	ADD R1, R1, R2
+    IMM R2, .InstructionAddressTable
+    ADD R1, R1, R2
 
     LOD R2, R1
     CAL R2 
-	.ExecEnd
-	RET
+    .ExecEnd
+    RET
 // Instructions
 .Push
-	LOD R1, .Pointer
-	INC R1, R1
-	STR .Pointer, R1
+    LOD R1, .Pointer
+    INC R1, R1
+    STR .Pointer, R1
 
-	LOD R2, R1
-	PSH R2
-	RET
+    LOD R2, R1
+    PSH R2
+    RET
 .Pop
-	POP R0
-	RET
+    POP R0
+    RET
 .And
-	POP R2
-	POP R1
-	AND R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    AND R1, R1, R2
+    PSH R1
+    RET
 .Or
-	POP R2
-	POP R1
-	OR R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    OR R1, R1, R2
+    PSH R1
+    RET
 .Xor
-	POP R2
-	POP R1
-	XOR R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    XOR R1, R1, R2
+    PSH R1
+    RET
 .Not
-	POP R1
-	NOT R1, R1
-	PSH R1
-	RET
+    POP R1
+    NOT R1, R1
+    PSH R1
+    RET
 .Increment
-	POP R1
-	INC R1, R1
-	PSH R1
-	RET
+    POP R1
+    INC R1, R1
+    PSH R1
+    RET
 .Decrement
-	POP R1
-	DEC R1, R1
-	PSH R1
-	RET
+    POP R1
+    DEC R1, R1
+    PSH R1
+    RET
 .Add
-	POP R2
-	POP R1
-	ADD R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    ADD R1, R1, R2
+    PSH R1
+    RET
 .Subtract
-	POP R1 // -1
-	POP R2 // -2
-	SUB R1, R1, R2 // -1 - -2
-	PSH R1
-	RET
+    POP R1 // -1
+    POP R2 // -2
+    SUB R1, R1, R2 // -1 - -2
+    PSH R1
+    RET
 .Multiply
-	POP R2
-	POP R1
-	MLT R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    MLT R1, R1, R2
+    PSH R1
+    RET
 .Divide
-	POP R2
-	POP R1
-	DIV R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    DIV R1, R1, R2
+    PSH R1
+    RET
 .Modulo
-	POP R2
-	POP R1
-	MOD R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    MOD R1, R1, R2
+    PSH R1
+    RET
 .ShiftLeft
-	POP R2
-	POP R1
-	BSL R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    BSL R1, R1, R2
+    PSH R1
+    RET
 .ShiftRight
-	POP R2
-	POP R1
-	BSR R1, R1, R2
-	PSH R1
-	RET
+    POP R2
+    POP R1
+    BSR R1, R1, R2
+    PSH R1
+    RET
 .BranchIfZero // TODO verify to not jump outside program // TODO make jump relative
-	POP R1 // -1
-	POP R2 // -2
-	BZN .BRZEnd, R1 // Branches depending on -1, to -2
+    POP R1 // -1
+    POP R2 // -2
+    BZN .BRZEnd, R1 // Branches depending on -1, to -2
     LOD R1, .KernelMemoryLimit
-	BRL .Error1, R2, R1 //trying to jump to kernel
-	LOD R1, .Pointer
-	ADD R1, R1, R2
-	DEC R1, R1
-	STR .Pointer, R1
-	.BRZEnd
-	RET
+    BRL .Error1, R2, R1 //trying to jump to kernel
+    LOD R1, .Pointer
+    ADD R1, R1, R2
+    DEC R1, R1
+    STR .Pointer, R1
+    .BRZEnd
+    RET
 .BranchIfNotZero
-	POP R1
-	POP R2
-	BZR .BNZEnd, R1
+    POP R1
+    POP R2
+    BZR .BNZEnd, R1
     LOD R1, .KernelMemoryLimit
-	BRL .Error1, R2, R1 //trying to jump to kernel
-	LOD R1, .Pointer
-	ADD R1, R1, R2
-	DEC R1, R1
-	STR .Pointer, R1
-	.BNZEnd
-	RET
+    BRL .Error1, R2, R1 //trying to jump to kernel
+    LOD R1, .Pointer
+    ADD R1, R1, R2
+    DEC R1, R1
+    STR .Pointer, R1
+    .BNZEnd
+    RET
 .BranchIfPositive
-	POP R1
-	POP R2
-	OR R1, R1, R1
-	BRN .BRPEnd
+    POP R1
+    POP R2
+    OR R1, R1, R1
+    BRN .BRPEnd
     LOD R1, .KernelMemoryLimit
-	BRL .Error1, R2, R1 //trying to jump to kernel
-	LOD R1, .Pointer
-	ADD R1, R1, R2
-	DEC R1, R1
-	STR .Pointer, R1
-	.BRPEnd
-	RET
+    BRL .Error1, R2, R1 //trying to jump to kernel
+    LOD R1, .Pointer
+    ADD R1, R1, R2
+    DEC R1, R1
+    STR .Pointer, R1
+    .BRPEnd
+    RET
 .BranchIfNegative
-	POP R1
-	POP R2
-	OR R1, R1, R1
-	BRP .BRNEnd
+    POP R1
+    POP R2
+    OR R1, R1, R1
+    BRP .BRNEnd
     LOD R1, .KernelMemoryLimit
-	BRL .Error1, R2, R1 //trying to jump to kernel
-	LOD R1, .Pointer
-	ADD R1, R1, R2
-	DEC R1, R1
-	STR .Pointer, R1
-	.BRNEnd
-	RET
+    BRL .Error1, R2, R1 //trying to jump to kernel
+    LOD R1, .Pointer
+    ADD R1, R1, R2
+    DEC R1, R1
+    STR .Pointer, R1
+    .BRNEnd
+    RET
 .LoadMemory
-	POP R1
+    POP R1
 
-	// Check if address is addressing kernel
-	LOD R2, .KernelMemoryLimit
-	BRL .Error0, R1, R2
+    // Check if address is addressing kernel
+    LOD R2, .KernelMemoryLimit
+    BRL .Error0, R1, R2
 
-	LOD R2, R1
-	PSH R2
-	RET
+    LOD R2, R1
+    PSH R2
+    RET
 .StoreMemory
-	POP R1
+    POP R1
 
-	// Check if address is adressing kernel
-	LOD R2, .KernelMemoryLimit
-	BRL .Error0, R1, R2
+    // Check if address is adressing kernel
+    LOD R2, .KernelMemoryLimit
+    BRL .Error0, R1, R2
 
-	POP R2
-	STR R1, R2
-	PSH R1
-	RET
+    POP R2
+    STR R1, R2
+    PSH R1
+    RET
 .Input
-	IN R1, %79
-	PSH R2
-	RET
+    IN R1, %79
+    PSH R2
+    RET
 .Output
-	POP R2
-	OUT %79, R2
-	RET
+    POP R2
+    OUT %79, R2
+    RET
 .Swap
-	POP R1
-	POP R2 
-	DEC R1
-	MOV R3, VSP //save return stack address
-	SUB VSP, VSP, R1 //subtract to reach the swap section
-	POP R1
-	PSH R2
-	MOV VSP, R3
-	PSH R1
-	RET
+    POP R1
+    POP R2 
+    DEC R1
+    MOV R3, VSP //save return stack address
+    SUB VSP, VSP, R1 //subtract to reach the swap section
+    POP R1
+    PSH R2
+    MOV VSP, R3
+    PSH R1
+    RET
 .Copy
-	POP R1
-	PSH R1
-	PSH R1
-	RET
+    POP R1
+    PSH R1
+    PSH R1
+    RET
 .SystemCall
     POP R1
 
     AND R1, R1, 0x0F
-	// Only 16 system calls? (For now?)
-	BRG .Error2, R1, 4 //system call does not exist
+    // Only 16 system calls? (For now?)
+    BRG .Error2, R1, 4 //system call does not exist
 
-	IMM R2, .SystemCalls
-	ADD R1, R1, R2
+    IMM R2, .SystemCalls
+    ADD R1, R1, R2
 
     LOD R2, R1
     CAL R2
 
-	RET
+    RET
 // System Calls
 .Exit
-	// Exit (CPU)
-	// Halt the CPU, exiting the OS
-	HLT
+    // Exit (CPU)
+    // Halt the CPU, exiting the OS
+    HLT
 .DriveAddress
-	//Output Address
-	POP R2
-	OUT %121, R2
-	PSH R2
-	RET
+    //Output Address
+    POP R2
+    OUT %121, R2
+    PSH R2
+    RET
 .DriveWrite
-	//Write
-	POP R2
-	OUT %123, R2
-	PSH R2
-	RET
+    //Write
+    POP R2
+    OUT %123, R2
+    PSH R2
+    RET
 .DriveRead
-	//Read
-	IN R2, %123
-	PSH R2
-	RET
+    //Read
+    IN R2, %123
+    PSH R2
+    RET
 .Error
     //Prints "Error (number)"
-	OUT %79, 0x0A
+    OUT %79, 0x0A
     OUT %79, 0x45 //E
     OUT %79, R1
     OUT %79, 0x0A
@@ -510,8 +510,8 @@ DW 0 // stopper
     IMM R1, 0x33
     BRA .Error
 .Error4
-	IMM R1, 0x34
-	BRA .Error
+    IMM R1, 0x34
+    BRA .Error
 .Error5
-	IMM R1, 0x35
-	BRA .Error
+    IMM R1, 0x35
+    BRA .Error
