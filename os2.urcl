@@ -101,6 +101,9 @@ DW 0x0200 // 512
         LOD R3, R2 //check if 0
 		BRZ .EndLoop2 // end if no more file
 
+		INC R1, R1 //incriment file
+		BRG .Shell, R1, .MaxFiles
+
 		JMP .Loop2 // loop again if more file
 	.EndLoop2
 
@@ -113,56 +116,56 @@ DW 0x0200 // 512
     .ShellLoop
         IN R1, %79
         OUT %79, R1
-        BRE .ShellLoopEnd, R1, 0x20
-        BRE .ShellLoopEnd, R1, 0x0A
+        BRE .ShellLoopEnd, R1, 0x20 //space
+        BRE .ShellLoopEnd, R1, 0x0A //new line
         PSH R1
-        BRE .SlashCommands, R1, 0x2F
+        BRE .SlashCommands, R1, 0x2F ///
         BRA .ShellLoop
     .ShellLoopEnd
     POP R1
-    BRE .Clear, R1, 0x72
-    BRE .Ls, R1, 0x73
-    BRE .Exit, R1, 0x74
+    BRE .Clear, R1, 0x72 //r
+    BRE .Ls, R1, 0x73 //s
+    BRE .Exit, R1, 0x74 //t
 .ShellEnd2
 CAL .ShellEnd
 BRA .Error5
 
 .Clear
     POP R1
-    BNE .Error5, R1, 0x61
+    BNE .Error5, R1, 0x61 //a
     POP R1
-    BNE .Error5, R1, 0x65
+    BNE .Error5, R1, 0x65 //e
     POP R1
-    BNE .Error5, R1, 0x6C
+    BNE .Error5, R1, 0x6C //l
     POP R1
-    BNE .Error5, R1, 0x63
+    BNE .Error5, R1, 0x63 //c
     CAL .ShellEnd
     OUT %79, 0x1B //escape code to clear console
-    OUT %79, 0x
+    OUT %79, 0x5B
     OUT %79, 0x32
     OUT %79, 0x6A
     BRA .Shell
 
 .Ls
     POP R1
-    BNE .Error5, R1, 0x6C
+    BNE .Error5, R1, 0x6C //l
     CAL .ShellEnd
     BRA .ListPrograms
 
 .Exit
     POP R1
-    BNE .Error5, R1, 0x69 //nice
+    BNE .Error5, R1, 0x69 //i nice
     POP R1
-    BNE .Error5, R1, 0x78
+    BNE .Error5, R1, 0x78 //x
     POP R1
-    BNE .Error5, R1, 0x65
+    BNE .Error5, R1, 0x65 //e
     HLT
 
 .SlashCommands
 POP R1
-BNE .Error5, R1, 0x2F
+BNE .Error5, R1, 0x2F ///
 POP R1
-BNE .Error5, R1, 0x2E
+BNE .Error5, R1, 0x2E //.
 CAL .ShellEnd
 BRA .RunProgram
 
@@ -208,7 +211,7 @@ BRA .RunProgram
 
 	RET
 
-.RunProgram // Asks the user for a program to run and runs it
+.ListPrograms // Asks the user for a program to run and runs it
 	//* Ask for program *//
 	//* Display loaded files
 	OUT %79, 0x46 // "F"
@@ -227,7 +230,10 @@ BRA .RunProgram
 		ADD R1, R1, 4 // Increment file pointer to next file
 		JMP .Loop1
 	.EndLoop1
+	OUT %79, 0x0A
+	BRA .Shell
 
+.RunProgram
 	IN R1, %79 // Get file index
 	SUB R1, R1, 0x30 // Move it to "0" = 0
     BSL R1, R1, 2 // Multiply it by 4 to get an address to the file table
@@ -244,7 +250,7 @@ BRA .RunProgram
 
 	CAL .InterpretationLoop // Start executing program
 
-	RET // After the program has been run
+	BRA .Shell // After the program has been run
 
 .Main
 	CAL .ScanFiles
@@ -259,7 +265,9 @@ BRA .RunProgram
 .FileDoesNotExist
 IMM R1, 0x30
 JMP .Error
-
+.Error5
+IMM R1, 0x35
+JMP .Error
 .Error
 // R1 = error num
 OUT %79, 0x45 // "E"
@@ -270,4 +278,4 @@ OUT %79, 0x72 // "r"
 OUT %79, 0x20 // " "
 OUT %79, R1 // "wat" 
 OUT %79, 0x0A // "\n"
-JMP .Shell // Coming soon to a URCL near you !
+JMP .Shell
