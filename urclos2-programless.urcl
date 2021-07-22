@@ -28,7 +28,7 @@ DW .Add // 2
 DW .Subtract // 3
 DW .Multiply // 4
 DW .Divide // 5
-DW .Modulus // 6
+DW .Modulo // 6
 DW .Xor // 7
 DW .And // 8
 DW .Or // 9
@@ -372,9 +372,9 @@ DIV R4, R4, R3 // Do the division
 STR R2, R4
 JMP .Loop3
 
-.Modulus
+.Modulo
 CAL .Get2op
-MOD R4, R4, R3 // Do the modulus
+MOD R4, R4, R3 // Do the modulo
 STR R2, R4
 JMP .Loop3
 
