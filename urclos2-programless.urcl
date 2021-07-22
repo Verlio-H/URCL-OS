@@ -697,6 +697,7 @@ STR .CurrentWorkingDirectory, R3
 JMP .Loop3
 .CDFCroot
 STR .CurrentWorkingDirectory, .Files
+JMP .Loop3
 
 //* EXTRA FUNCTIONS *//
 .Error
