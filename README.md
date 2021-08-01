@@ -1,5 +1,5 @@
 # URCL-OS
-An operating system written in URCL.
+An operating system written in URCL
 
 URCL Discord: https://discord.gg/jWRr2vx
 
