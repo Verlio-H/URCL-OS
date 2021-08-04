@@ -128,10 +128,13 @@ DW 0xFFFF // 65535
 DW 1
 
 .Bits // Stores the amount of bits of the cpu
-DW 16
+DW &BITS
 
 .MemoryAvailable // Stores the amount of memory available to the cpu
 DW 0xFFFF
+
+.Mem0
+DW M0
 
 //* Files *//
 .Files // Space for 8 files Format: {name} {format} {length} {address}
@@ -286,28 +289,7 @@ POP R1
     STR .ProgramLimit, R2
 
     JMP .InterpretationLoop // Start executing program
-
-.ListPrograms // Asks the user for a program to run and runs it
-    //* Ask for program *//
-    //* Display loaded files
-    OUT %TEXT, 0x46 // "F"
-    OUT %TEXT, 0x3A // ":"
-    OUT %TEXT, 0x20 // " "
-    // R1 = File pointer
-    LOD R1, .CurrentWorkingDirectory
-    .Loop1
-        LOD R2, R1 // R2 = mem[R1]
-        BRZ .EndLoop1, R2 // Branch if no more files
-        // If file: output file name
-        OUT %TEXT, R2 // file name
-        OUT %TEXT, 0x2C // ","
-        OUT %TEXT, 0x20 // " "
-        ADD R1, R1, 4 // Increment file pointer to next file
-        JMP .Loop1
-    .EndLoop1
-    OUT %TEXT, 0x0A // Add new line for shell
-    JMP .Shell
-
+    
 .InterpretationLoop // The loop that is ran for running a program (calling .Execute per instruction)
     // Prepare for next program being executed (reset variables)
     STR .VirtualRegisters, 0 // Set R0 to 0
@@ -500,12 +482,14 @@ JMP .Loop3
 .Push
 CAL .Get1op
 PSH R3
+STR .Stackpointer, SP
 JMP .Loop3
 
 .Pop
 CAL .Get1op
 POP R3
 STR R2, R3
+STR .Stackpointer, SP
 JMP .Loop3
 
 .Call
