@@ -128,6 +128,7 @@ DW 0xFFFF // 65535
 DW 1
 
 .Bits // Stores the amount of bits of the cpu
+//DW 0 //incase &BITS does not work in compiler/emulator (cough cough mod)
 DW &BITS
 
 .MemoryAvailable // Stores the amount of memory available to the cpu
@@ -537,7 +538,7 @@ JMP .Loop3
 
 .Decrement
 CAL .Get1op
-INC R3, R3
+DEC R3, R3
 STR R2, R3
 JMP .Loop3
 

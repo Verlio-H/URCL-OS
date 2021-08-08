@@ -21,76 +21,86 @@ MINSTACK 6
 // /0 (/bin)
 STR M108, 0x0262 //3 long name starts with b (bin)
 STR M109, 0x0001 //format: directory
-STR M110, 0x0004 //length (-1)
+STR M110, 0x0000 //length (-1)
 STR M111, M114 //address of start
 STR M112, 0x0069 //continuation of name (i)
 STR M113, 0x006E //continuation of name (n)
 STR M114, 0x016C //2 long name starts with l (ls)
 STR M115, 0x0000 //format: program
-STR M116, 0x001B //length (-1)
+STR M116, 0x002C //length (-1)
 STR M117, M129 //address of start
 STR M118, 0x0163 //2 long name starts with c (cd)
 STR M119, 0x0000 //format: program
-STR M120, 0x000E //length (-1)
-STR M121, M163
+STR M120, 0x0007 //length (-1)
+STR M121, M180
 STR M122, 0 //padding
 STR M123, 0 //padding between files
 // /0/0 (/bin/ls)
 STR M124, 0x016C //2 long name starts with l (ls)
 STR M125, 0x0000 //format: program
-STR M126, 0x001B //length (-1)
+STR M126, 0x002C //length (-1)
 STR M127, M129 //address of start
 STR M128, 0x0073 //continuation of name (s)
-STR M129, 0x1001 //imm r1, 0x30 '0'
-STR M130, 0x0030 //immediate word
-STR M131, 0x2001 //imm r2, 0x3A ':'
-STR M132, 0x003A //immediate word
-STR M133, 0x5001 //imm r5, 0x20 ' '
-STR M134, 0x0020 //immediate word
-STR M135, 0x6001 //imm r6, 0x0A '\n'
-STR M136, 0x000A //immediate word
-STR M137, 0x7001 //imm r7, 27 (.escape)
-STR M138, 0x001B //immediate word
-STR M139, 0x8001 //imm r8, 0x10 (.loop)
-STR M140, 0x0010 //immediate word
-STR M141, 0x9001 //imm r9, 4
-STR M142, 0x0004 //immediate word
-STR M143, 0xA001 //imm r10, 0xFF
-STR M144, 0x00FF //immediate word
-STR M145, 0x3413 //lod r3, r4
-STR M146, 0x3A08 //and r3, r10
-STR M147, 0x730C //brz r7, r3
-STR M148, 0x111D //outchar r1
-STR M149, 0x211D //outchar r2 ':'
-STR M150, 0x511D //outchar r5 ' '
-STR M151, 0x311D //outchar r3
-STR M152, 0x611D //outchar r6 '\n'
-STR M153, 0x4902 //add r4, r9
-STR M154, 0x101B //inc r1
-STR M155, 0x8012 //jmp r8
-STR M156, 0x001E //hlt .escape
-STR M157, 0
+STR M129, 0x7001 //imm r7, 0x000A '0'
+STR M130, 0x000A //immediate word
+STR M131, 0x8001 //imm r8, 8
+STR M132, 0x0008 //immediate word
+STR M133, 0x9001 //imm r9, 0x00FF
+STR M134, 0x00FF //immediate word
+STR M135, 0xA001 //imm r10, 0x3A ':'
+STR M136, 0x003A //immediate word
+STR M137, 0xB001 //imm r11, 0x20 ' '
+STR M138, 0x0020 //immediate word
+STR M139, 0xC001 //imm r12, 3
+STR M140, 0x0003 //immediate word
+STR M141, 0xD001 //imm r13, .loop
+STR M142, 0x0015 //immediate word
+STR M143, 0xE001 //imm r14, .loop2
+STR M144, 0x0024 //immediate word
+STR M145, 0xF001 //imm r15, .end
+STR M146, 0x002B //immediate word
+STR M147, 0x5001 //imm r5, 0x30 ('0')
+STR M148, 0x0030 //immediate word
+STR M149, 0x401C //dec r4
+STR M150, 0x401B //inc r4 (.loop)
+STR M151, 0x1413 //lod r1, r4
+STR M152, 0xF10C //brz r15, r1
+STR M153, 0x2115 //mov r2, r1
+STR M154, 0x280B //bsr r2, r8 (8)
+STR M155, 0x1908 //and r1, r9
+STR M156, 0x511D //outc r5
+STR M157, 0xA11D //outc r10
+STR M158, 0xB11D //outc r11
+STR M159, 0x111D //outc r1
+STR M160, 0x501B //inc r5
+STR M161, 0x4C02 //add r4, r12
+STR M162, 0xD20C //brz r13, r2
+STR M163, 0x1413 //lod r1, r4
+STR M164, 0x1203 //sub r1, r2
+STR M165, 0x6113 //lod r6, r1 (.loop2)
+STR M166, 0x611D //outc r6
+STR M167, 0x201C //dec r2
+STR M168, 0x101B //inc r1
+STR M169, 0xE20D //bnz r14, r2
+STR M170, 0x711D //outc r7
+STR M171, 0xD012 //jmp r13
+STR M172, 0x001E //hlt
+STR M173, 0
+STR M174, 0
 // /0/1 (/bin/cd)
-STR M158, 0x0163 //2 long name starts with c (cd)
-STR M159, 0x0000 //format: program
-STR M160, 0x000E //length (-1)
-STR M161, M163 //address of start
-STR M162, 0x0064 //continuation of name (d)
-STR M163, 0x2017 //pop r2
-STR M164, 0xF001 //imm r15, 0xb (.root)
-STR M165, 0x000B //immediate word
-STR M166, 0x4001 //imm r4, 0x5E
-STR M167, 0x005E //immediate word
-STR M168, 0x240E //bre r2, r4
-STR M169, 0x1001 //imm r1, 0x30
-STR M170, 0x0030 //immediate word
-STR M171, 0x2103 //sub r2, r1
-STR M172, 0x21DD //cdFromCurrent r2
-STR M173, 0x001E // hlt
-STR M174, 0x2001 // .root imm r2, 0xffff
-STR M175, 0xFFFF //immediate word
-STR M176, 0x21DD //cdFromCurrent r2
-STR M177, 0x001E //hlt
+STR M175, 0x0163 //2 long name starts with c (cd)
+STR M176, 0x0000 //format: program
+STR M177, 0x000E //length (-1)
+STR M178, M180 //address of start
+STR M179, 0x0064 //continuation of name (d)
+STR M180, 0x2017 //pop r2
+STR M181, 0xF001 //imm r15, 0xb (.root)
+STR M182, 0x000B //immediate word
+STR M183, 0x1001 //imm r1, 0x30
+STR M184, 0x0030 //immediate word
+STR M185, 0x2103 //sub r2, r1
+STR M186, 0x21DD //cdFromCurrent r2
+STR M187, 0x001E // hlt
 
 .Initialize
 // Instruction to Address Table
@@ -200,7 +210,8 @@ STR M71, 0xFFFF // 65535
 STR M72, 0
 
 .Bits // Stores the amount of bits of the cpu
-//STR M73, &BITS please please please &BITS please
+//STR M74, 0 //incase &BITS does not work in compiler/emulator (cough cough mod)
+STR M73, &BITS
 
 .MemoryAvailable // Stores the amount of memory available to the cpu
 STR M74, 0xFFFF
@@ -593,7 +604,7 @@ JMP .Loop3
 
 .Decrement
 CAL .Get1op
-INC R3, R3
+DEC R3, R3
 STR R2, R3
 JMP .Loop3
 
