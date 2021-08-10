@@ -18,27 +18,34 @@ MINHEAP 200
 MINSTACK 6
 
 // Load files (using STR)
+// / (root)
+// Format: {name} {format} {length} {address} (8 files in root)
+STR M76, 0x0262
+STR M77, 0x0001
+STR M78, 0x0009
+STR M79, M114
+STR M80, 0
 // /0 (/bin)
 STR M108, 0x0262 //3 long name starts with b (bin)
 STR M109, 0x0001 //format: directory
-STR M110, 0x0000 //length (-1)
+STR M110, 0x0009 //length
 STR M111, M114 //address of start
 STR M112, 0x0069 //continuation of name (i)
 STR M113, 0x006E //continuation of name (n)
 STR M114, 0x016C //2 long name starts with l (ls)
 STR M115, 0x0000 //format: program
-STR M116, 0x002C //length (-1)
+STR M116, 0x002C //length
 STR M117, M129 //address of start
 STR M118, 0x0163 //2 long name starts with c (cd)
 STR M119, 0x0000 //format: program
-STR M120, 0x0007 //length (-1)
+STR M120, 0x0008 //length
 STR M121, M180
 STR M122, 0 //padding
 STR M123, 0 //padding between files
 // /0/0 (/bin/ls)
 STR M124, 0x016C //2 long name starts with l (ls)
 STR M125, 0x0000 //format: program
-STR M126, 0x002C //length (-1)
+STR M126, 0x002C //length
 STR M127, M129 //address of start
 STR M128, 0x0073 //continuation of name (s)
 STR M129, 0x7001 //imm r7, 0x000A '0'
@@ -90,7 +97,7 @@ STR M174, 0
 // /0/1 (/bin/cd)
 STR M175, 0x0163 //2 long name starts with c (cd)
 STR M176, 0x0000 //format: program
-STR M177, 0x000E //length (-1)
+STR M177, 0x000E //length
 STR M178, M180 //address of start
 STR M179, 0x0064 //continuation of name (d)
 STR M180, 0x2017 //pop r2
@@ -167,9 +174,6 @@ STR M48, 0x0000
 .MaxFiles // Stores the maximum amount of files in the root directory multiplied by 4 (Total = maximum amount of file info words)
 STR M49, 0x0020
 
-.Placeholder // nobody knows
-STR M50, 0x0000
-
 //* Other OS Variables *//
 .VirtualRegisters
 STR M51, 0 // R0 (Set to 0 before each program)
@@ -217,76 +221,7 @@ STR M73, &BITS
 STR M74, 0xFFFF
 
 .Mem0
-STR M75, M108
-//* Files *//
-.Files // Space for 8 files Format: {name} {format} {length} {address}
-STR M76, 0
-STR M77, 0
-STR M78, 0
-STR M79, 0
-STR M80, 0
-STR M81, 0
-STR M82, 0
-STR M83, 0
-STR M84, 0
-STR M85, 0
-STR M86, 0
-STR M87, 0
-STR M88, 0
-STR M89, 0
-STR M90, 0
-STR M91, 0
-STR M92, 0
-STR M93, 0
-STR M94, 0
-STR M95, 0
-STR M96, 0
-STR M97, 0
-STR M98, 0
-STR M99, 0
-STR M100, 0
-STR M101, 0
-STR M102, 0
-STR M103, 0
-STR M104, 0
-STR M105, 0
-STR M106, 0
-STR M107, 0
-
-.ScanFiles //scan for files on drive
-    // Scans the files stored in memory and writes their info on the file info table (.Files)
-
-    LOD R1, M68 //.CurrentWorkingDirectory R1 = File Table Address
-    IMM R2, M108 // R2 = Address of the file currently scanning
-
-    LOD R3, R2 // R3 = data of header of file
-    BRZ .Shell, R3 // Exit if no file
-
-    .Loop2
-        // name
-        STR R1, R3 // Store the data on the file table
-
-        // format
-        LLOD R3, R2, 1 // R3 = data of header of file
-        LSTR R1, 1, R3 // Store the data on the file table
-
-        // length
-        LLOD R4, R2, 2 // R3 = data of header of file
-        LSTR R1, 2, R4 // Store the data on the file table
-
-        // address
-        LLOD R3, R2, 3 // R3 = data of header of file
-        LSTR R1, 3, R3 // Store the data on the file table
-
-        ADD R1, R1, 4
-        ADD R2, R2, 4
-        // jump to the end of the file
-        INC R4, R4
-        ADD R2, R3, R4 // Increment by length of file so that the index is at the start of the next file
-        LOD R3, R2 //check if 0
-        BRZ .EndLoop2, R3 // end if no more file
-        JMP .Loop2
-    .EndLoop2
+STR M75, M76
 
 JMP .Shell
 .ShellEnd
@@ -356,13 +291,10 @@ POP R1
     STR M47, R2 // .Pointer = R2
     DEC R1, R2
     //set .ProgramLimit to the limit of the file (inclusive) (read description of the variable)
-    DEC R4, R4
-    LOD R4, R4
-    ADD R2, R1, R4
+    LLOD R4, R4, -1
+    ADD R2, R2, R4
     STR M48, R2
-
-    JMP .InterpretationLoop // Start executing program
-    
+  
 .InterpretationLoop // The loop that is ran for running a program (calling .Execute per instruction)
     // Prepare for next program being executed (reset variables)
     STR M51, 0 // Set R0 to 0

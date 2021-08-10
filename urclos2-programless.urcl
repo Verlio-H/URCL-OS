@@ -18,6 +18,8 @@ MINHEAP 128
 MINSTACK 6
 
 // Load files here (using STR)
+// / (root dir) (M0-M32)
+STR M0, 0
 
 JMP .Initialize
 // Instruction to Address Table
@@ -94,7 +96,7 @@ DW 0 // R1
 DW 0 // R2
 DW 0 // R3
 .R4
-DW 0 // R4
+DW M0 // R4
 DW 0 // R5
 DW 0 // R6
 DW 0 // R7
@@ -112,10 +114,10 @@ DW 0 // Jump Dest (R15)
 DW 0
 
 .CurrentWorkingDirectory
-DW 0
+DW M0
 
 .RootDirectory
-DW 0
+DW M0
 
 .StartupProgram // Coming soon
 DW 0
@@ -137,81 +139,8 @@ DW 0xFFFF
 .Mem0
 DW M0
 
-//* Files *//
-.Files // Space for 8 files Format: {name} {format} {length} {address}
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-
 .Initialize
 STR .Stackpointer, SP //initialize starting sp
-STR .CurrentWorkingDirectory, .Files
-STR .RootDirectory, .Files
-STR .R4, .Files
-
-.ScanFiles //scan for files on drive
-    // Scans the files stored in memory and writes their info on the file info table (.Files)
-
-    LOD R1, .CurrentWorkingDirectory // R1 = File Table Address
-    IMM R2, M0 // R2 = Address of the file currently scanning
-
-    LOD R3, R2 // R3 = data of header of file
-    BRZ .Shell, R3 // Exit if no file
-
-    .Loop2
-        // name
-        STR R1, R3 // Store the data on the file table
-
-        // format
-        LLOD R3, R2, 1 // R3 = data of header of file
-        LSTR R1, 1, R3 // Store the data on the file table
-
-        // length
-        LLOD R4, R2, 2 // R3 = data of header of file
-        LSTR R1, 2, R4 // Store the data on the file table
-
-        // address
-        LLOD R3, R2, 3 // R3 = data of header of file
-        LSTR R1, 3, R3 // Store the data on the file table
-
-        ADD R1, R1, 4
-        ADD R2, R2, 4
-        // jump to the end of the file
-        INC R4, R4
-        ADD R2, R3, R4 // Increment by length of file so that the index is at the start of the next file
-        LOD R3, R2 //check if 0
-        BRZ .EndLoop2, R3 // end if no more file
-        JMP .Loop2
-    .EndLoop2
 
 JMP .Shell
 .ShellEnd
@@ -284,12 +213,10 @@ POP R1
     STR .Pointer, R2 // .Pointer = R1
     DEC R1, R2
     //set .ProgramLimit to the limit of the file (inclusive) (read description of the variable)
-    DEC R4, R4
-    LOD R4, R4
-    ADD R2, R1, R4
+    LLOD R4, R4, -1
+    ADD R2, R2, R4
     STR .ProgramLimit, R2
 
-    JMP .InterpretationLoop // Start executing program
     
 .InterpretationLoop // The loop that is ran for running a program (calling .Execute per instruction)
     // Prepare for next program being executed (reset variables)
@@ -681,7 +608,8 @@ LOD R3, R3 //load address
 STR .CurrentWorkingDirectory, R3
 JMP .Loop3
 .CDFCroot
-STR .CurrentWorkingDirectory, .Files
+LOD R3, .RootDirectory
+STR .CurrentWorkingDirectory, R3
 JMP .Loop3
 
 //* EXTRA FUNCTIONS *//

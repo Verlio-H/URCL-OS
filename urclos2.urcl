@@ -18,89 +18,97 @@ MINHEAP 128
 MINSTACK 6
 
 // Load files (using STR)
+// / (root)
+// Format: {name} {format} {length} {address} (8 files in root)
+STR M0, 0x0262
+STR M1, 0x0001
+STR M2, 0x0009
+STR M3, M39
+STR M4, 0
+//M5-M32 should contain 0 but unnecessary in this case)
 // /0 (/bin)
-STR M0, 0x0262 //3 long name starts with b (bin)
-STR M1, 0x0001 //format: directory
-STR M2, 0x0000 //length (-1)
-STR M3, M6 //address of start
-STR M4, 0x0069 //continuation of name (i)
-STR M5, 0x006E //continuation of name (n)
-STR M6, 0x016C //2 long name starts with l (ls)
-STR M7, 0x0000 //format: program
-STR M8, 0x002C //length (-1)
-STR M9, M21 //address of start
-STR M10, 0x0163 //2 long name starts with c (cd)
-STR M11, 0x0000 //format: program
-STR M12, 0x0007 //length (-1)
-STR M13, M72
-STR M14, 0 //padding
-STR M15, 0 //padding between files
+STR M33, 0x0262 //3 long name starts with b (bin)
+STR M34, 0x0001 //format: directory
+STR M35, 0x0009 //length
+STR M36, M39 //address of start
+STR M37, 0x0069 //continuation of name (i)
+STR M38, 0x006E //continuation of name (n)
+STR M39, 0x016C //2 long name starts with l (ls)
+STR M40, 0x0000 //format: program
+STR M41, 0x002C //length
+STR M42, M54 //address of start
+STR M43, 0x0163 //2 long name starts with c (cd)
+STR M44, 0x0000 //format: program
+STR M45, 0x0008 //length
+STR M46, M104
+STR M47, 0 //padding
+STR M48, 0 //padding between files
 // /0/0 (/bin/ls)
-STR M16, 0x016C //2 long name starts with l (ls)
-STR M17, 0x0000 //format: program
-STR M18, 0x002C //length (-1)
-STR M19, M21 //address of start
-STR M20, 0x0073 //continuation of name (s)
-STR M21, 0x7001 //imm r7, 0x000A '0'
-STR M22, 0x000A //immediate word
-STR M23, 0x8001 //imm r8, 8
-STR M24, 0x0008 //immediate word
-STR M25, 0x9001 //imm r9, 0x00FF
-STR M26, 0x00FF //immediate word
-STR M27, 0xA001 //imm r10, 0x3A ':'
-STR M28, 0x003A //immediate word
-STR M29, 0xB001 //imm r11, 0x20 ' '
-STR M30, 0x0020 //immediate word
-STR M31, 0xC001 //imm r12, 3
-STR M32, 0x0003 //immediate word
-STR M33, 0xD001 //imm r13, .loop
-STR M34, 0x0015 //immediate word
-STR M35, 0xE001 //imm r14, .loop2
-STR M36, 0x0024 //immediate word
-STR M37, 0xF001 //imm r15, .end
-STR M38, 0x002B //immediate word
-STR M39, 0x5001 //imm r5, 0x30 ('0')
-STR M40, 0x0030 //immediate word
-STR M41, 0x401C //dec r4
-STR M42, 0x401B //inc r4 (.loop)
-STR M43, 0x1413 //lod r1, r4
-STR M44, 0xF10C //brz r15, r1
-STR M45, 0x2115 //mov r2, r1
-STR M46, 0x280B //bsr r2, r8 (8)
-STR M47, 0x1908 //and r1, r9
-STR M48, 0x511D //outc r5
-STR M49, 0xA11D //outc r10
-STR M50, 0xB11D //outc r11
-STR M51, 0x111D //outc r1
-STR M52, 0x501B //inc r5
-STR M53, 0x4C02 //add r4, r12
-STR M54, 0xD20C //brz r13, r2
-STR M55, 0x1413 //lod r1, r4
-STR M56, 0x1203 //sub r1, r2
-STR M57, 0x6113 //lod r6, r1 (.loop2)
-STR M58, 0x611D //outc r6
-STR M59, 0x201C //dec r2
-STR M60, 0x101B //inc r1
-STR M61, 0xE20D //bnz r14, r2
-STR M62, 0x711D //outc r7
-STR M63, 0xD012 //jmp r13
-STR M64, 0x001E //hlt
-STR M65, 0
-STR M66, 0
+STR M49, 0x016C //2 long name starts with l (ls)
+STR M50, 0x0000 //format: program
+STR M51, 0x002D //length
+STR M52, M54 //address of start
+STR M53, 0x0073 //continuation of name (s)
+STR M54, 0x7001 //imm r7, 0x000A '\n'
+STR M55, 0x000A //immediate word
+STR M56, 0x8001 //imm r8, 8
+STR M57, 0x0008 //immediate word
+STR M58, 0x9001 //imm r9, 0x00FF
+STR M59, 0x00FF //immediate word
+STR M60, 0xA001 //imm r10, 0x3A ':'
+STR M61, 0x003A //immediate word
+STR M62, 0xB001 //imm r11, 0x20 ' '
+STR M63, 0x0020 //immediate word
+STR M64, 0xC001 //imm r12, 3
+STR M65, 0x0003 //immediate word
+STR M66, 0xD001 //imm r13, .loop
+STR M67, 0x0015 //immediate word
+STR M68, 0xE001 //imm r14, .loop2
+STR M69, 0x0024 //immediate word
+STR M70, 0xF001 //imm r15, .end
+STR M71, 0x002B //immediate word
+STR M72, 0x5001 //imm r5, 0x30 ('0')
+STR M73, 0x0030 //immediate word
+STR M74, 0x401C //dec r4
+STR M75, 0x401B //inc r4 (.loop)
+STR M76, 0x1413 //lod r1, r4
+STR M77, 0xF10C //brz r15, r1
+STR M78, 0x2115 //mov r2, r1
+STR M79, 0x280B //bsr r2, r8 (8)
+STR M80, 0x1908 //and r1, r9
+STR M81, 0x511D //outc r5
+STR M82, 0xA11D //outc r10
+STR M83, 0xB11D //outc r11
+STR M84, 0x111D //outc r1
+STR M85, 0x501B //inc r5
+STR M86, 0x4C02 //add r4, r12
+STR M87, 0xD20C //brz r13, r2
+STR M88, 0x1413 //lod r1, r4
+STR M89, 0x1203 //sub r1, r2
+STR M90, 0x6113 //lod r6, r1 (.loop2)
+STR M91, 0x611D //outc r6
+STR M92, 0x201C //dec r2
+STR M93, 0x101B //inc r1
+STR M94, 0xE20D //bnz r14, r2
+STR M95, 0x711D //outc r7
+STR M96, 0xD012 //jmp r13
+STR M97, 0x001E //hlt
+STR M98, 0
 // /0/1 (/bin/cd)
-STR M67, 0x0163 //2 long name starts with c (cd)
-STR M68, 0x0000 //format: program
-STR M69, 0x0007 //length (-1)
-STR M70, M72 //address of start
-STR M71, 0x0064 //continuation of name (d)
-STR M72, 0x2017 //pop r2
-STR M73, 0xF001 //imm r15, 0xb (.root)
-STR M74, 0x000B //immediate word
-STR M75, 0x1001 //imm r1, 0x30
-STR M76, 0x0030 //immediate word
-STR M77, 0x2103 //sub r2, r1
-STR M78, 0x21DD //cdFromCurrent r2
-STR M79, 0x001E // hlt
+STR M99, 0x0163 //2 long name starts with c (cd)
+STR M100, 0x0000 //format: program
+STR M101, 0x0007 //length
+STR M102, M104 //address of start
+STR M103, 0x0064 //continuation of name (d)
+STR M104, 0x2017 //pop r2
+STR M105, 0xF001 //imm r15, 0xb (.root)
+STR M106, 0x000B //immediate word
+STR M107, 0x1001 //imm r1, 0x30
+STR M108, 0x0030 //immediate word
+STR M109, 0x2103 //sub r2, r1
+STR M110, 0x21DD //cdFromCurrent r2
+STR M111, 0x001E // hlt
+STR M112, 0
 
 JMP .Initialize
 // Instruction to Address Table
@@ -177,7 +185,7 @@ DW 0 // R1
 DW 0 // R2
 DW 0 // R3
 .R4
-DW 0 // R4
+DW M0 // R4
 DW 0 // R5
 DW 0 // R6
 DW 0 // R7
@@ -195,10 +203,10 @@ DW 0 // Jump Dest (R15)
 DW 0
 
 .CurrentWorkingDirectory
-DW 0
+DW M0
 
 .RootDirectory
-DW 0
+DW M0
 
 .StartupProgram // Coming soon
 DW 0
@@ -220,81 +228,8 @@ DW 0xFFFF
 .Mem0
 DW M0
 
-//* Files *//
-.Files // Space for 8 files Format: {name} {format} {length} {address}
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-
 .Initialize
 STR .Stackpointer, SP //initialize starting sp
-STR .CurrentWorkingDirectory, .Files
-STR .RootDirectory, .Files
-STR .R4, .Files
-
-.ScanFiles //scan for files on drive
-    // Scans the files stored in memory and writes their info on the file info table (.Files)
-
-    LOD R1, .CurrentWorkingDirectory // R1 = File Table Address
-    IMM R2, M0 // R2 = Address of the file currently scanning
-
-    LOD R3, R2 // R3 = data of header of file
-    BRZ .Shell, R3 // Exit if no file
-
-    .Loop2
-        // name
-        STR R1, R3 // Store the data on the file table
-
-        // format
-        LLOD R3, R2, 1 // R3 = data of header of file
-        LSTR R1, 1, R3 // Store the data on the file table
-
-        // length
-        LLOD R4, R2, 2 // R3 = data of header of file
-        LSTR R1, 2, R4 // Store the data on the file table
-
-        // address
-        LLOD R3, R2, 3 // R3 = data of header of file
-        LSTR R1, 3, R3 // Store the data on the file table
-
-        ADD R1, R1, 4
-        ADD R2, R2, 4
-        // jump to the end of the file
-        INC R4, R4
-        ADD R2, R3, R4 // Increment by length of file so that the index is at the start of the next file
-        LOD R3, R2 //check if 0
-        BRZ .EndLoop2, R3 // end if no more file
-        JMP .Loop2
-    .EndLoop2
 
 JMP .Shell
 .ShellEnd
@@ -367,12 +302,10 @@ POP R1
     STR .Pointer, R2 // .Pointer = R1
     DEC R1, R2
     //set .ProgramLimit to the limit of the file (inclusive) (read description of the variable)
-    DEC R4, R4
-    LOD R4, R4
-    ADD R2, R1, R4
+    LLOD R4, R4, -1
+    ADD R2, R2, R4
     STR .ProgramLimit, R2
 
-    JMP .InterpretationLoop // Start executing program
     
 .InterpretationLoop // The loop that is ran for running a program (calling .Execute per instruction)
     // Prepare for next program being executed (reset variables)
@@ -764,7 +697,8 @@ LOD R3, R3 //load address
 STR .CurrentWorkingDirectory, R3
 JMP .Loop3
 .CDFCroot
-STR .CurrentWorkingDirectory, .Files
+LOD R3, .RootDirectory
+STR .CurrentWorkingDirectory, R3
 JMP .Loop3
 
 //* EXTRA FUNCTIONS *//
