@@ -46,7 +46,7 @@ STR M48, 0 //padding between files
 // /0/0 (/bin/ls)
 STR M49, 0x016C //2 long name starts with l (ls)
 STR M50, 0x0000 //format: program
-STR M51, 0x002D //length
+STR M51, 0x002C //length
 STR M52, M54 //address of start
 STR M53, 0x0073 //continuation of name (s)
 STR M54, 0x7001 //imm r7, 0x000A '\n'
