@@ -153,6 +153,7 @@ MOV R2, SP
 .ShellLoop
 IN R1, %TEXT
 OUT %TEXT, R1
+BRE .Backspace, R1, 0x8
 PSH R1
 BNE .ShellLoop, R1, 0xA
 //if first char null or : exit
@@ -639,3 +640,7 @@ BSR R2, R2, 12
 ADD R2, R2, .VirtualRegisters
 LOD R3, R2
 RET
+
+.Backspace
+POP R1
+JMP .ShellLoop
