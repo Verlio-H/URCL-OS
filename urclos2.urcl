@@ -8,107 +8,14 @@
 // Terminal upgrades (more to come as well)
 // Directories
 // New file header format (easier to access information and scales better)
-
+// Programs are now stored in storage instead of memory
 // Included programs: ls (0 or /0/0), cd (1 or /0/1)
 
 // URCL HEADER
 BITS >= 16
 MINREG 4
-MINHEAP 128
+MINHEAP 64
 MINSTACK 6
-
-// Load files (using STR)
-// / (root)
-// Format: {name} {format} {length} {address} (8 files in root)
-STR M0, 0x0262
-STR M1, 0x0001
-STR M2, 0x0009
-STR M3, M39
-STR M4, 0
-//M5-M32 should contain 0 but unnecessary in this case)
-// /0 (/bin)
-STR M33, 0x0262 //3 long name starts with b (bin)
-STR M34, 0x0001 //format: directory
-STR M35, 0x0009 //length
-STR M36, M39 //address of start
-STR M37, 0x0069 //continuation of name (i)
-STR M38, 0x006E //continuation of name (n)
-STR M39, 0x016C //2 long name starts with l (ls)
-STR M40, 0x0000 //format: program
-STR M41, 0x002C //length
-STR M42, M54 //address of start
-STR M43, 0x0163 //2 long name starts with c (cd)
-STR M44, 0x0000 //format: program
-STR M45, 0x0008 //length
-STR M46, M104
-STR M47, 0 //padding
-STR M48, 0 //padding between files
-// /0/0 (/bin/ls)
-STR M49, 0x016C //2 long name starts with l (ls)
-STR M50, 0x0000 //format: program
-STR M51, 0x002C //length
-STR M52, M54 //address of start
-STR M53, 0x0073 //continuation of name (s)
-STR M54, 0x7001 //imm r7, 0x000A '\n'
-STR M55, 0x000A //immediate word
-STR M56, 0x8001 //imm r8, 8
-STR M57, 0x0008 //immediate word
-STR M58, 0x9001 //imm r9, 0x00FF
-STR M59, 0x00FF //immediate word
-STR M60, 0xA001 //imm r10, 0x3A ':'
-STR M61, 0x003A //immediate word
-STR M62, 0xB001 //imm r11, 0x20 ' '
-STR M63, 0x0020 //immediate word
-STR M64, 0xC001 //imm r12, 3
-STR M65, 0x0003 //immediate word
-STR M66, 0xD001 //imm r13, .loop
-STR M67, 0x0015 //immediate word
-STR M68, 0xE001 //imm r14, .loop2
-STR M69, 0x0024 //immediate word
-STR M70, 0xF001 //imm r15, .end
-STR M71, 0x002B //immediate word
-STR M72, 0x5001 //imm r5, 0x30 ('0')
-STR M73, 0x0030 //immediate word
-STR M74, 0x401C //dec r4
-STR M75, 0x401B //inc r4 (.loop)
-STR M76, 0x1413 //lod r1, r4
-STR M77, 0xF10C //brz r15, r1
-STR M78, 0x2115 //mov r2, r1
-STR M79, 0x280B //bsr r2, r8 (8)
-STR M80, 0x1908 //and r1, r9
-STR M81, 0x511D //outc r5
-STR M82, 0xA11D //outc r10
-STR M83, 0xB11D //outc r11
-STR M84, 0x111D //outc r1
-STR M85, 0x501B //inc r5
-STR M86, 0x4C02 //add r4, r12
-STR M87, 0xD20C //brz r13, r2
-STR M88, 0x1413 //lod r1, r4
-STR M89, 0x1203 //sub r1, r2
-STR M90, 0x6113 //lod r6, r1 (.loop2)
-STR M91, 0x611D //outc r6
-STR M92, 0x201C //dec r2
-STR M93, 0x101B //inc r1
-STR M94, 0xE20D //bnz r14, r2
-STR M95, 0x711D //outc r7
-STR M96, 0xD012 //jmp r13
-STR M97, 0x001E //hlt
-STR M98, 0
-// /0/1 (/bin/cd)
-STR M99, 0x0163 //2 long name starts with c (cd)
-STR M100, 0x0000 //format: program
-STR M101, 0x0007 //length
-STR M102, M104 //address of start
-STR M103, 0x0064 //continuation of name (d)
-STR M104, 0x2017 //pop r2
-STR M105, 0xF001 //imm r15, 0xb (.root)
-STR M106, 0x000B //immediate word
-STR M107, 0x1001 //imm r1, 0x30
-STR M108, 0x0030 //immediate word
-STR M109, 0x2103 //sub r2, r1
-STR M110, 0x21DD //cdFromCurrent r2
-STR M111, 0x001E // hlt
-STR M112, 0
 
 JMP .Initialize
 // Instruction to Address Table
@@ -152,17 +59,19 @@ DW .Exit // 0
 DW .DriveAddr // 1
 DW .DriveRead // 2
 DW .DriveWrite // 3
-DW .CallProgram // 4
-DW .CallProgramFromDirectory // 5
-DW .DeviceNumber // 6
-DW .InChar // 7
-DW .OutChar // 8
-DW .InString // 9 (Coming soon)
-DW .OutString // 10 (Coming soon)
-DW .InHex // 11
-DW .OutHex // 12
-DW .ChangeWorkingDirectory // 13
-DW .ChangeWorkingDirectoryFromCurrent // 14
+DW .DrivePage // 4
+DW .Profile // 5
+DW .CallProgram // 6
+DW .CallProgramFromDirectory // 7
+DW .DeviceNumber // 8
+DW .InChar // 9
+DW .OutChar // 10
+DW .InString // 11 (Coming soon)
+DW .OutString // 12 (Coming soon)
+DW .InHex // 13
+DW .OutHex // 14
+DW .ChangeWorkingDirectory // 15
+DW .ChangeWorkingDirectoryFromCurrent // 16
 
 //* Interpreter Variables *//
 .Pointer // Stores the address of the next instruction to be executed
@@ -185,7 +94,7 @@ DW 0 // R1
 DW 0 // R2
 DW 0 // R3
 .R4
-DW M0 // R4
+DW 0 // R4
 DW 0 // R5
 DW 0 // R6
 DW 0 // R7
@@ -203,10 +112,10 @@ DW 0 // Jump Dest (R15)
 DW 0
 
 .CurrentWorkingDirectory
-DW M0
+DW 0
 
 .RootDirectory
-DW M0
+DW 0
 
 .StartupProgram // Coming soon
 DW 0
@@ -228,8 +137,12 @@ DW 0xFFFF
 .Mem0
 DW M0
 
+.Temp
+DW 0
+
 .Initialize
 STR .Stackpointer, SP //initialize starting sp
+STR M0, 0
 
 JMP .Shell
 .ShellEnd
@@ -242,6 +155,7 @@ MOV R2, SP
 .ShellLoop
 IN R1, %TEXT
 OUT %TEXT, R1
+BRE .Exit, R1, 0x65
 BRE .Backspace, R1, 0x8
 PSH R1
 BNE .ShellLoop, R1, 0xA
@@ -255,7 +169,9 @@ BRE .ChangeToRoot, R3, 0x2F
 BRE .FileFindLoop, R3, 0x2E
 //if first char not / look in /bin
 LOD R4, .RootDirectory
-LLOD R4, R4, 3
+ADD R4, R4, 3
+OUT %ADDR, R4
+IN R4, %BUS
 STR .CurrentWorkingDirectory, R4
 JMP .FileFindLoopSkipDec
 //if first char / follow directory starting from root
@@ -275,16 +191,14 @@ LOD R4, .CurrentWorkingDirectory
 BSL R3, R3, 2
 ADD R3, R3, 3
 ADD R4, R3, R4
-LOD R3, R4
+OUT %ADDR, R4
+IN R3, %BUS
 STR .CurrentWorkingDirectory, R3
 JMP .FileFindLoop
 .ProgramFound
 LOD R2, .CurrentWorkingDirectory
 BRZ .Error, R2 //exit if fake offbrand directory
 STR .CurrentWorkingDirectory, R1 //reset wd
-BGE .SubWDSkip, R1, M0
-SUB R1, R1, .InstructionTable
-.SubWDSkip
 STR .R4, R1
 POP R1
 //jump to program
@@ -300,18 +214,34 @@ POP R1
     //LOD R2, .CurrentWorkingDirectory
     //ADD R1, R1, R2 // Point to the file table
     //LOD R2, R1
-    STR .Pointer, R2 // .Pointer = R1
-    DEC R1, R2
+    //STR .Pointer, R2 // .Pointer = R1
+    STR .Pointer, M0
     //set .ProgramLimit to the limit of the file (inclusive) (read description of the variable)
-    LLOD R4, R4, -1
-    ADD R2, R2, R4
-    STR .ProgramLimit, R2
-
+    OUT %ADDR, R4
+    IN R4, %BUS //get length
+    ADD R3, R2, R4 
+    ADD R3, R3, M0
+    STR .ProgramLimit, R3
+    MOV R1, R3
+    .LoadProgram
+    //check if program cached already
+    LOD R4, M0
+    BRE .InterpretationLoop, R4, R2
+    IMM R4, M0
+    STR R4, R2
+    INC R4, R4
+    .CacheLoop
+    OUT %ADDR, R2
+    IN R3, %BUS
+    STR R4, R3
+    INC R2, R2
+    INC R4, R4
+    BRG .CacheLoop, R1, R2
     
 .InterpretationLoop // The loop that is ran for running a program (calling .Execute per instruction)
     // Prepare for next program being executed (reset variables)
     STR .VirtualRegisters, 0 // Set R0 to 0
-    
+    IMM R1, M0
     // R1 = Pointer
     // R3 = Temp
     .Loop3
@@ -319,7 +249,6 @@ POP R1
         // Check if reached the end of a program
         LOD R3, .ProgramLimit
         BRG .ShellEnd, R1, R3
-
         // R4 = full operation
         // R2 = instruction
         LOD R4, R1 // R2 = mem[R1(pointer)]
@@ -581,11 +510,22 @@ JMP .Loop3
 .DriveRead
 CAL .Get1op
 IN R3, %BUS
+STR R2, R3
 JMP .Loop3
 
 .DriveWrite
 CAL .Get1op
 OUT %BUS, R3
+JMP .Loop3
+
+.DrivePage
+CAL .Get1op
+OUT %PAGE, R3
+JMP .Loop3
+
+.Profile
+CAL .Get1op
+OUT %PROFILE, R3
 JMP .Loop3
 
 .CallProgram
@@ -602,7 +542,22 @@ BSL R3, R3, 2 //mult by 4
 ADD R3, R3, 3
 LOD R4, .CurrentWorkingDirectory //load current working directory
 ADD R3, R3, R4 //add offset
-LOD R3, R3 //load address
+OUT %ADDR, R3
+IN R4, %BUS //load address
+STR M0, R4
+DEC R3, R3
+OUT %ADDR, R3
+IN R3, %ADDR //load length
+ADD R3, R3, R4
+IMM R1, M0
+.cacheloop
+OUT %ADDR, R4
+IN  R2, %BUS
+STR R1, R2
+INC R4, R4
+INC R1, R1
+BNE .cacheloop, R4, R3
+IMM R3, M0
 JMP .CallprogramOpPresent
 
 .DeviceNumber
@@ -694,7 +649,8 @@ BSL R3, R3, 2 //mult by 4
 ADD R3, R3, 3
 LOD R4, .CurrentWorkingDirectory //load current working directory
 ADD R3, R3, R4 //add offset
-LOD R3, R3 //load address
+OUT %ADDR, R3
+IN R3, %BUS
 STR .CurrentWorkingDirectory, R3
 JMP .Loop3
 .CDFCroot
@@ -715,6 +671,7 @@ JMP .ShellEnd
 .Get2op
 AND R2, R4, 0xF000 // R2 = op1
 AND R3, R4, 0x0F00 // R3 = op2
+STR .Temp, R2
 BSR R2, R2, 12
 BSR R3, R3, 8
 ADD R2, .VirtualRegisters, R2 // Add offset

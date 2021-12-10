@@ -1,13 +1,5 @@
-// THIS IS A BETA AND BUGS MAY BE PRESENT
-
-// URCL OS v2
-
-// Whats new in v2:
-// Rewrite of all functions
-// New intermediate language
-// Terminal upgrades (more to come as well)
-// Directories
-// New file header format (easier to access information and scales better)
+// THIS IS AN OUTDATED VERSION OF URCL-OS
+// this exists for systems with no storage other than RAM
 
 // No programs are included in this version
 
