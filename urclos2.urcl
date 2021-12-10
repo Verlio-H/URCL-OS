@@ -155,7 +155,7 @@ MOV R2, SP
 .ShellLoop
 IN R1, %TEXT
 OUT %TEXT, R1
-BRE .Exit, R1, 0x65
+BRE .Exit, R1, 0x71
 BRE .Backspace, R1, 0x8
 PSH R1
 BNE .ShellLoop, R1, 0xA
