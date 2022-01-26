@@ -13,8 +13,8 @@
 // URCL HEADER
 BITS >= 16
 MINREG 4
-MINHEAP 64
-MINSTACK 6
+MINHEAP 256
+MINSTACK 16
 
 JMP .Initialize
 // Instruction to Address Table
@@ -313,9 +313,10 @@ POP R0
     OUT %ADDR, R4
     IN R4, %BUS //get length
     ADD R3, R2, R4
+    MOV R1, R3
     ADD R3, R3, M1
     STR .ProgramLimit, R3
-    MOV R1, R3
+
     .LoadProgram
     //check if program cached already
     LOD R4, M0
