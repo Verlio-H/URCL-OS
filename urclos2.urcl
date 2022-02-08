@@ -62,7 +62,7 @@ DW .DrivePage // 4
 DW .Profile // 5
 DW .CallProgram // 6
 DW .CallProgramFromDirectory // 7
-DW .DeviceNumber // 8
+DW .CheckSupported // 8
 DW .InChar // 9
 DW .OutChar // 10
 DW .InString // 11 (Coming soon)
@@ -103,12 +103,11 @@ DW 0 // R10
 DW 0 // R11
 DW 0 // R12
 DW 0 // R13
-DW 0 // R14
+.StackPointer
+DW 0 // Stack Pointer (R14)
 .JumpDest
 DW 0 // Jump Dest (R15)
 
-.Stackpointer
-DW 0
 
 .CurrentWorkingDirectory
 DW 0
@@ -654,9 +653,11 @@ BNE .cacheloop, R4, R3
 IMM R3, M0
 JMP .CallprogramOpPresent
 
-.DeviceNumber
+.CheckSupported
 CAL .Get1op
-OUT %PROFILE, R3
+OUT %SUPPORTED, R3
+IN R3, %SUPPORTED
+STR R2, R3
 JMP .Loop3
 
 .InChar
