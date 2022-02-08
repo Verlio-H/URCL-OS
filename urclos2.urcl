@@ -521,12 +521,14 @@ JMP .Loop3
 
 .Push
 CAL .Get1op
+LOD SP .Stackpointer
 PSH R3
 STR .Stackpointer, SP
 JMP .Loop3
 
 .Pop
 CAL .Get1op
+LOD SP .Stackpointer
 POP R3
 STR R2, R3
 STR .Stackpointer, SP
