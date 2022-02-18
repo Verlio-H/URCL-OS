@@ -8,12 +8,12 @@
 // Whats coming next:
 // A basic malloc and free
 // Simple display support
-// More programs/commands (touch, pwd, mkdir, rm)
+// More programs/commands (touch pwd mkdir rm etc.)
 
 // URCL HEADER
 BITS >= 16
 MINREG 4
-MINHEAP 256
+MINHEAP 128
 MINSTACK 16
 
 JMP .Initialize
@@ -103,7 +103,7 @@ DW 0 // R10
 DW 0 // R11
 DW 0 // R12
 DW 0 // R13
-.StackPointer
+.Stackpointer
 DW 0 // Stack Pointer (R14)
 .JumpDest
 DW 0 // Jump Dest (R15)
@@ -127,7 +127,7 @@ DW 1
 
 .Bits // Stores the amount of bits of the cpu
 //DW 0 //incase &BITS does not work in compiler/emulator (cough cough mod)
-DW &BITS
+DW @BITS
 
 .MemoryAvailable // Stores the amount of memory available to the cpu
 DW 0xFFFF
@@ -139,8 +139,8 @@ DW M0
 DW 0
 
 .Initialize
-STR .Stackpointer, SP //initialize starting sp
-STR M0, 0
+STR .Stackpointer SP //initialize starting sp
+STR M0 0
 
 //terminal but new but terminal but yeah and stuff
 
@@ -149,53 +149,53 @@ STR M0, 0
 JMP .Shell
 .ShellEnd
 POP R1
-BNE .ShellEnd, R1, 0
+BNE .ShellEnd R1 0
 .Shell
-OUT %TEXT, 0x24
-OUT %TEXT, 0x20
+OUT %TEXT 0x24
+OUT %TEXT 0x20
 PSH 0
-MOV R2, SP
+MOV R2 SP
 .ShellLoop
-IN R1, %TEXT
-OUT %TEXT, R1
-BRE .Backspace, R1, 0x8
+IN R1 %TEXT
+OUT %TEXT R1
+BRE .Backspace R1 0x8
 PSH R1
-BNE .ShellLoop, R1, 0xA
+BNE .ShellLoop R1 0xA
 //if first char null or : exit
-LOD R1, .CurrentWorkingDirectory //save wd so can reset
+LOD R1 .CurrentWorkingDirectory //save wd so can reset
 PSH R1
-DEC R2, R2
-LOD R3, R2
-BRE .ShellEnd, R3, 0xA // Exit if null
-BRE .ShellEnd, R3, 0x3A // Exit if ':'
-BRE .ChangeToRoot, R3, 0x2F
-BRE .FileFindNoSkip, R3, 0x2E
+DEC R2 R2
+LOD R3 R2
+BRE .ShellEnd R3 0xA // Exit if null
+BRE .ShellEnd R3 0x3A // Exit if ':'
+BRE .ChangeToRoot R3 0x2F
+BRE .FileFindNoSkip R3 0x2E
 //if first char not / look in /bin (/0)
-LOD R4, .RootDirectory
-ADD R4, R4, 3
-OUT %ADDR, R4
-IN R4, %BUS
-STR .CurrentWorkingDirectory, R4
+LOD R4 .RootDirectory
+ADD R4 R4 3
+OUT %ADDR R4
+IN R4 %BUS
+STR .CurrentWorkingDirectory R4
 JMP .FileFindLoopSlash
 //if first char / follow directory starting from root
 .ChangeToRoot
-LOD R4, .RootDirectory
-STR .CurrentWorkingDirectory, R4
+LOD R4 .RootDirectory
+STR .CurrentWorkingDirectory R4
 //if first char . follow directory from current
 //////////////////////////////////////
 .FileFindNoSkip
-DEC R2, R2
-LOD R3, R2 //R3 = char
+DEC R2 R2
+LOD R3 R2 //R3 = char
 .FileFindLoopSlash
-BRE .FileFindNoSkip, R3, 0x2F //ignore if slash (only occurs if ./ or // at begininig)
-LOD R1, .CurrentWorkingDirectory
+BRE .FileFindNoSkip R3 0x2F //ignore if slash (only occurs if ./ or // at begininig)
+LOD R1 .CurrentWorkingDirectory
 .FileFindLoop
-OUT %ADDR, R1
-IN R4, %BUS
-BRZ .Error, R4 
-AND R4, R4, 0xFF
-BRE .FileFoundAttempt, R4, R3
-ADD R1, R1, 4
+OUT %ADDR R1
+IN R4 %BUS
+BRZ .Error R4 
+AND R4 R4 0xFF
+BRE .FileFoundAttempt R4 R3
+ADD R1 R1 4
 JMP .FileFindLoop
 
 
@@ -203,57 +203,57 @@ JMP .FileFindLoop
 .FileFoundAttempt
 //get length & address of first char
 PSH R2 //original SP
-OUT %ADDR, R1
-IN R4, %BUS
-BSR R4, R4, 8 //name length (R4 max size is 255)
-ADD R1, R1, 3 //add 3 to get to address word 
+OUT %ADDR R1
+IN R4 %BUS
+BSR R4 R4 8 //name length (R4 max size is 255)
+ADD R1 R1 3 //add 3 to get to address word 
 PSH R1 //address word
-OUT %ADDR, R1
-IN R1, %BUS
-SUB R1, R1, R4 //get address of second name char
+OUT %ADDR R1
+IN R1 %BUS
+SUB R1 R1 R4 //get address of second name char
 .LodNextChar
-OUT %ADDR, R1
-IN R3, %BUS
+OUT %ADDR R1
+IN R3 %BUS
 //load next char
 PSH R1
-DEC R2, R2
-LOD R1, R2
+DEC R2 R2
+LOD R1 R2
 PSH R2
 //if R4 == 0 && nextchar == (\n || ' ') then file found
-SETE R2, R1, 0xA
-ADD R2, R2, R4
-BRE .FileFound, R2, &MAX
-SETE R2, R1, 0x20
-ADD R2, R2, R4
-BRE .FileFound R2, &MAX
+SETE R2 R1 0xA
+ADD R2 R2 R4
+BRE .FileFound R2 @MAX
+SETE R2 R1 0x20
+ADD R2 R2 R4
+BRE .FileFound R2 @MAX
 //if R4 == 0 && nextchar == / then folder found
-SETE R2, R1, 0x2F
-ADD R2, R2, R4
-BRE .FolderFound, R2, &MAX
+SETE R2 R1 0x2F
+ADD R2 R2 R4
+BRE .FolderFound R2 @MAX
 //if (R4 != 0 && nextchar == (/ || \n || ' ')) || (R4 == 0 && nextchar != (/ || \n || ' ')) then attempt failed
-SETNE R2, R4, 0 //explaination of this condition check: if R4 is not 0, R2 = -1, if R2 + nextchar produces a carry (R2 = -1 and nextchar != 0) then R2 = -1, then after adding next char check if the result is one less than expected char
-SETC R2, R2, R1
-ADD R2, R2, R1
-BRE .AttemptFailed, R2, 9
-BRE .AttemptFailed, R2, 0x2E
-BRE .AttemptFailed, R2, 0x1F
+SETNE R2 R4 0 //explaination of this condition check: if R4 is not 0 R2 = -1 if R2 + nextchar produces a carry (R2 = -1 and nextchar != 0) then R2 = -1 then after adding next char check if the result is one less than expected char
+SETC R2 R2 R1
+ADD R2 R2 R1
+BRE .AttemptFailed R2 9
+BRE .AttemptFailed R2 0x2E
+BRE .AttemptFailed R2 0x1F
 PSH R3
-SETE R2, R1, 0x2F //nextchar == (/ || \n || ' ')
-SETE R3, R1, 0xA
-OR R2, R2, R3
-SETE R3, R1, 0x20
-OR R2, R2, R3
-SETE R3, R4, 0 //R4 == 0
-NOT R2, R2 //nextchar != (/ || \n || ' ') &MAX
-BRC .AttemptFailed, R2, R3 //if both are true
+SETE R2 R1 0x2F //nextchar == (/ || \n || ' ')
+SETE R3 R1 0xA
+OR R2 R2 R3
+SETE R3 R1 0x20
+OR R2 R2 R3
+SETE R3 R4 0 //R4 == 0
+NOT R2 R2 //nextchar != (/ || \n || ' ') &MAX
+BRC .AttemptFailed R2 R3 //if both are true
 POP R3
 //if R3 != nextchar then attempt failed
-BNE .AttemptFailed, R3, R1
+BNE .AttemptFailed R3 R1
 //else continue depth
 POP R2
 POP R1
-DEC R4, R4
-INC R1, R1
+DEC R4 R4
+INC R1 R1
 JMP .LodNextChar
 
 .FolderFound
@@ -261,10 +261,10 @@ POP R2
 POP R0
 POP R1
 POP R0
-OUT %ADDR, R1
-IN R1, %BUS
-DEC R2, R2
-LOD R3, R2
+OUT %ADDR R1
+IN R1 %BUS
+DEC R2 R2
+LOD R3 R2
 JMP .FileFindLoop
 
 .AttemptFailed
@@ -274,83 +274,74 @@ POP R0
 POP R1
 POP R2 //Reset SP
 //check next file in dir
-INC R1, R1 //R1 points to next file
-OUT %ADDR, R1
-IN R3, %BUS
-BNZ .FileFoundAttempt, R3
+INC R1 R1 //R1 points to next file
+OUT %ADDR R1
+IN R3 %BUS
+BNZ .FileFoundAttempt R3
 
 .FileFound
 //victory royale condition
 POP R0 //pointer to 0xa
 POP R1
 POP R3 //address pointer
+
 POP R0
 //R4 == 0 at this point meaning that R1 must equal start of file
-MOV R2, R1 //start of the file
+MOV R2 R1 //start of the file
 POP R4 //R4 = original wd root
-STR .R4, R4
-STR .CurrentWorkingDirectory, R4
-DEC R4, R3
+STR .R4 R4
+STR .CurrentWorkingDirectory R4
+DEC R4 R3
 POP R0
  //length of file (for seemlessly connecting to rest of OS)
 //jump to program
 
 .RunProgram
-    //IN R1, %TEXT // Get file index
-    //OUT %TEXT, R1
-    //SUB R1, R1, 0x30 // Move it to "0" = 0
-    //BSL R1, R1, 2 // Multiply it by 4 to get an address to the file table
-    //ADD R1, R1, 3 // Point it to the global address
-    //LOD R2, .MaxFiles
-    //BRG .Error, R1, R2
-    //LOD R2, .CurrentWorkingDirectory
-    //ADD R1, R1, R2 // Point to the file table
-    //LOD R2, R1
-    //STR .Pointer, R2 // .Pointer = R1
-    STR .Pointer, M0
+    STR .Pointer M0
     //set .ProgramLimit to the limit of the file (inclusive) (read description of the variable)
-    OUT %ADDR, R4
-    IN R4, %BUS //get length
-    ADD R3, R2, R4
-    MOV R1, R3
-    ADD R3, R3, M1
-    STR .ProgramLimit, R3
+    OUT %ADDR R4
+    IN R4 %BUS //get length
+    ADD R3 R2 R4
+    MOV R1 R3
+    ADD R3 R3 M1
+    STR .ProgramLimit R3
 
     .LoadProgram
     //check if program cached already
-    LOD R4, M0
-    BRE .InterpretationLoop, R4, R2
-    IMM R4, M0
-    STR R4, R2
-    INC R4, R4
+    LOD R4 M0
+    BRE .InterpretationLoop R4 R2
+    IMM R4 M0
+    STR R4 R2
+    INC R4 R4
     .CacheLoop
-    OUT %ADDR, R2
-    IN R3, %BUS
-    STR R4, R3
-    INC R2, R2
-    INC R4, R4
-    BRG .CacheLoop, R1, R2
+    OUT %ADDR R2
+    IN R3 %BUS
+    STR R4 R3
+    INC R2 R2
+    INC R4 R4
+    BRG .CacheLoop R1 R2
     
 .InterpretationLoop // The loop that is ran for running a program (calling .Execute per instruction)
     // Prepare for next program being executed (reset variables)
-    STR .VirtualRegisters, 0 // Set R0 to 0
-    IMM R1, M0
+    STR .VirtualRegisters 0 // Set R0 to 0
+    STR .Stackpointer SP
+    IMM R1 M0
     // R1 = Pointer
     // R3 = Temp
     .Loop3
-        INC R1, R1 // Update PC
+        INC R1 R1 // Update PC
         // Check if reached the end of a program
-        LOD R3, .ProgramLimit
-        BRG .ShellEnd, R1, R3
+        LOD R3 .ProgramLimit
+        BRG .ShellEnd R1 R3
         // R4 = full operation
         // R2 = instruction
-        LOD R4, R1 // R2 = mem[R1(pointer)]
-        AND R2, R4, 0x001F // instruction = R2
+        LOD R4 R1 // R2 = mem[R1(pointer)]
+        AND R2 R4 0x001F // instruction = R2
 
         .Execute
-            BRZ .Loop3, R2 //exit if no instruction
-            ADD R2, R2, .InstructionTable //add offset to instruction table
-            LOD R2, R2 //load jump address
+            BRZ .Loop3 R2 //exit if no instruction
+            ADD R2 R2 .InstructionTable //add offset to instruction table
+            LOD R2 R2 //load jump address
             JMP R2 //call instruction
 
     .EndLoop3
@@ -359,187 +350,187 @@ POP R0
 
 // 11112222000IIIII
 // I = instruction
-// 1, 2 = operand
+// 1 2 = operand
 // 0 = only used in system call
 .Immediate
-AND R2, R4, 0xF000 // R2 = op1
-BSR R2, R2, 12
-INC R1, R1 // Inc pointer
-LOD R3, R1 // Load the immediate
-ADD R2, .VirtualRegisters, R2 // Add offset
-STR R2, R3 // Store the immediate
+AND R2 R4 0xF000 // R2 = op1
+BSR R2 R2 12
+INC R1 R1 // Inc pointer
+LOD R3 R1 // Load the immediate
+ADD R2 .VirtualRegisters R2 // Add offset
+STR R2 R3 // Store the immediate
 JMP .Loop3
 
 .Add
 CAL .Get2op
-ADD R4, R4, R3 // Do the addition
-STR R2, R4
+ADD R4 R4 R3 // Do the addition
+STR R2 R4
 JMP .Loop3
 
 .Subtract
 CAL .Get2op
-SUB R4, R4, R3 // Do the subtraction
-STR R2, R4
+SUB R4 R4 R3 // Do the subtraction
+STR R2 R4
 JMP .Loop3
 
 .Multiply
 CAL .Get2op
-MLT R4, R4, R3 // Do the multiplication
-STR R2, R4
+MLT R4 R4 R3 // Do the multiplication
+STR R2 R4
 JMP .Loop3
 
 .Divide
 CAL .Get2op
-DIV R4, R4, R3 // Do the division
-STR R2, R4
+DIV R4 R4 R3 // Do the division
+STR R2 R4
 JMP .Loop3
 
 .Modulo
 CAL .Get2op
-MOD R4, R4, R3 // Do the modulo
-STR R2, R4
+MOD R4 R4 R3 // Do the modulo
+STR R2 R4
 JMP .Loop3
 
 .Xor
 CAL .Get2op
-XOR R4, R4, R3 // Do the bitwise xor
-STR R2, R4
+XOR R4 R4 R3 // Do the bitwise xor
+STR R2 R4
 JMP .Loop3
 
 .And
 CAL .Get2op
-AND R4, R4, R3 // Do the bitwise and
-STR R2, R4
+AND R4 R4 R3 // Do the bitwise and
+STR R2 R4
 JMP .Loop3
 
 .Or
 CAL .Get2op
-OR R4, R4, R3 // Do the bitwise or
-STR R2, R4
+OR R4 R4 R3 // Do the bitwise or
+STR R2 R4
 JMP .Loop3
 
 .ShiftLeft
 CAL .Get2op
-BSL R3, R4, R3
-STR R2, R3
+BSL R3 R4 R3
+STR R2 R3
 JMP .Loop3
 
 .ShiftRight
 CAL .Get2op
-BSR R3, R4, R3
-STR R2, R3
+BSR R3 R4 R3
+STR R2 R3
 JMP .Loop3
 
 .BranchIfZero
 CAL .Get2op
-BNZ .BRZend, R3
-LOD R3, .Pointer
-ADD R4, R4, R3
-MOV R1, R4
-DEC R1, R1
+BNZ .BRZend R3
+LOD R3 .Pointer
+ADD R4 R4 R3
+MOV R1 R4
+DEC R1 R1
 .BRZend
 JMP .Loop3
 
 .BranchIfNotZero
 CAL .Get2op
-BRZ .BNZend, R3
-LOD R3, .Pointer
-ADD R4, R4, R3
-MOV R1, R4
-DEC R1, R1
+BRZ .BNZend R3
+LOD R3 .Pointer
+ADD R4 R4 R3
+MOV R1 R4
+DEC R1 R1
 .BNZend
 JMP .Loop3
 
 .BranchIfEqual
 CAL .Get2op
-BNE .BREend, R4, R3
-LOD R3, .JumpDest
-LOD R4, .Pointer
-ADD R1, R3, R4
-DEC R1, R1
+BNE .BREend R4 R3
+LOD R3 .JumpDest
+LOD R4 .Pointer
+ADD R1 R3 R4
+DEC R1 R1
 .BREend
 JMP .Loop3
 
 .BranchIfNotEqual
 CAL .Get2op
-BRE .BNEend, R4, R3
-LOD R3, .JumpDest
-LOD R4, .Pointer
-ADD R1, R3, R4
-DEC R1, R1
+BRE .BNEend R4 R3
+LOD R3 .JumpDest
+LOD R4 .Pointer
+ADD R1 R3 R4
+DEC R1 R1
 .BNEend
 JMP .Loop3
 
 .BranchIfGreaterThan
 CAL .Get2op
-BLE .BRGend, R4, R3
-LOD R3, .JumpDest
-LOD R4, .Pointer
-ADD R1, R3, R4
-DEC R1, R1
+BLE .BRGend R4 R3
+LOD R3 .JumpDest
+LOD R4 .Pointer
+ADD R1 R3 R4
+DEC R1 R1
 .BRGend
 JMP .Loop3
 
 .BranchIfLessThan
 CAL .Get2op
-BGE .BRLend, R4, R3
-LOD R3, .JumpDest
-LOD R4, .Pointer
-ADD R1, R3, R4
-DEC R1, R1
+BGE .BRLend R4 R3
+LOD R3 .JumpDest
+LOD R4 .Pointer
+ADD R1 R3 R4
+DEC R1 R1
 .BRLend
 JMP .Loop3
 
 .Jump
 CAL .Get1op
-LOD R4, .Pointer
-ADD R1, R4, R3
-DEC R1, R1
+LOD R4 .Pointer
+ADD R1 R4 R3
+DEC R1 R1
 JMP .Loop3
 
 .LoadMemory
 CAL .Get2op
-BGE .OutOfSource, R3, M0
-ADD R3, R3, .InstructionTable
+BGE .OutOfSource R3 M0
+ADD R3 R3 .InstructionTable
 .OutOfSource
-LOD R3, R3
-STR R2, R3
+LOD R3 R3
+STR R2 R3
 JMP .Loop3
 
 .StoreMemory
 CAL .Get2op
-BGE .OutOfSource2, R4, M0
-ADD R4, R4, .InstructionTable
+BGE .OutOfSource2 R4 M0
+ADD R4 R4 .InstructionTable
 .OutOfSource2
-STR R4, R3
+STR R4 R3
 JMP .Loop3
 
 .Move
 CAL .Get2op
-STR R2, R3
+STR R2 R3
 JMP .Loop3
 
 .Push
 CAL .Get1op
 LOD SP .Stackpointer
 PSH R3
-STR .Stackpointer, SP
+STR .Stackpointer SP
 JMP .Loop3
 
 .Pop
 CAL .Get1op
 LOD SP .Stackpointer
 POP R3
-STR R2, R3
-STR .Stackpointer, SP
+STR R2 R3
+STR .Stackpointer SP
 JMP .Loop3
 
 .Call
 CAL .Get1op
-LOD R4, .Pointer
-ADD R4, R4, R3
-MOV R1, R3
-DEC R1, R1
+LOD R4 .Pointer
+ADD R4 R4 R3
+MOV R1 R3
+DEC R1 R1
 PSH R4
 JMP .Loop3
 
@@ -548,46 +539,46 @@ POP R1
 JMP .Loop3
 
 .Add2Word //award for most painful instruction to impliment
-AND R2, R4, 0xF000 // R2 = op1
-BSR R2, R2, 12
-ADD R2, R2, .VirtualRegisters
+AND R2 R4 0xF000 // R2 = op1
+BSR R2 R2 12
+ADD R2 R2 .VirtualRegisters
 PSH R2
-LOD R2, R2
-LLOD R3, R2, 1
-AND R4, R4, 0x0F00 // R4 = op2
-BSR R4, R4, 8
-ADD R4, R4, .VirtualRegisters
+LOD R2 R2
+LLOD R3 R2 1
+AND R4 R4 0x0F00 // R4 = op2
+BSR R4 R4 8
+ADD R4 R4 .VirtualRegisters
 PSH R4
-LOD R4, R4
-BNC .AddNoCarry, R4, R2
-INC R3, R3
+LOD R4 R4
+BNC .AddNoCarry R4 R2
+INC R3 R3
 .AddNoCarry
-ADD R4, R4, R2
+ADD R4 R4 R2
 POP R2
-LLOD R2, R2, 1
-ADD R3, R3, R2
+LLOD R2 R2 1
+ADD R3 R3 R2
 POP R2
-STR R2, R4
-LSTR R2, 1, R3
+STR R2 R4
+LSTR R2 1 R3
 JMP .Loop3
 
 .Increment
 CAL .Get1op
-INC R3, R3
-STR R2, R3
+INC R3 R3
+STR R2 R3
 JMP .Loop3
 
 .Decrement
 CAL .Get1op
-DEC R3, R3
-STR R2, R3
+DEC R3 R3
+STR R2 R3
 JMP .Loop3
 
 .SystemCall
-AND R2, R4, 0x0FE0 // R2 = op1
-BSR R2, R2, 5
-ADD R2, R2, .SystemCalls // Add offset
-LOD R3, R2 // Load jump address
+AND R2 R4 0x0FE0 // R2 = op1
+BSR R2 R2 5
+ADD R2 R2 .SystemCalls // Add offset
+LOD R3 R2 // Load jump address
 JMP R3
 
 .Halt
@@ -599,80 +590,80 @@ HLT
 
 .DriveAddr
 CAL .Get1op
-OUT %ADDR, R3
+OUT %ADDR R3
 JMP .Loop3
 
 .DriveRead
 CAL .Get1op
-IN R3, %BUS
-STR R2, R3
+IN R3 %BUS
+STR R2 R3
 JMP .Loop3
 
 .DriveWrite
 CAL .Get1op
-OUT %BUS, R3
+OUT %BUS R3
 JMP .Loop3
 
 .DrivePage
 CAL .Get1op
-OUT %PAGE, R3
+OUT %PAGE R3
 JMP .Loop3
 
 .Profile
 CAL .Get1op
-OUT %PROFILE, R3
+OUT %PROFILE R3
 JMP .Loop3
 
 .CallProgram
 CAL .Get1op
 .CallprogramOpPresent
-STR .Pointer, R3 //set pointer
-MOV R1, R3 //set program counter
-STR .VirtualRegisters, 0 //set 0 reg
+STR .Pointer R3 //set pointer
+MOV R1 R3 //set program counter
+STR .VirtualRegisters 0 //set 0 reg
 JMP .Loop3
 
 .CallProgramFromDirectory
 CAL .Get1op
-BSL R3, R3, 2 //mult by 4
-ADD R3, R3, 3
-LOD R4, .CurrentWorkingDirectory //load current working directory
-ADD R3, R3, R4 //add offset
-OUT %ADDR, R3
-IN R4, %BUS //load address
-STR M0, R4
-DEC R3, R3
-OUT %ADDR, R3
-IN R3, %ADDR //load length
-ADD R3, R3, R4
-IMM R1, M0
+BSL R3 R3 2 //mult by 4
+ADD R3 R3 3
+LOD R4 .CurrentWorkingDirectory //load current working directory
+ADD R3 R3 R4 //add offset
+OUT %ADDR R3
+IN R4 %BUS //load address
+STR M0 R4
+DEC R3 R3
+OUT %ADDR R3
+IN R3 %ADDR //load length
+ADD R3 R3 R4
+IMM R1 M0
 .cacheloop
-OUT %ADDR, R4
-IN  R2, %BUS
-STR R1, R2
-INC R4, R4
-INC R1, R1
-BNE .cacheloop, R4, R3
-IMM R3, M0
+OUT %ADDR R4
+IN  R2 %BUS
+STR R1 R2
+INC R4 R4
+INC R1 R1
+BNE .cacheloop R4 R3
+IMM R3 M0
 JMP .CallprogramOpPresent
 
 .CheckSupported
 CAL .Get1op
-OUT %SUPPORTED, R3
-IN R3, %SUPPORTED
-STR R2, R3
+OUT %SUPPORTED R3
+IN R3 %SUPPORTED
+STR R2 R3
 JMP .Loop3
 
 .InChar
-AND R2, R4, 0xF000 // R2 = op1
-BSR R2, R2, 12
-ADD R2, R2, .VirtualRegisters
-IN R3, %TEXT
-STR R2, R3
+AND R2 R4 0xF000 // R2 = op1
+BSR R2 R2 12
+ADD R2 R2 .VirtualRegisters
+IN R3 %TEXT
+STR R2 R3
 JMP .Loop3
 
 .OutChar
 CAL .Get1op
-OUT %TEXT, R3
+OUT %TEXT R3
 JMP .Loop3
 
 .InString // Coming soon
@@ -680,108 +671,108 @@ JMP .Loop3
 JMP .Error
 
 .InHex
-AND R2, R4, 0xF000 // R2 = op1
-BSR R2, R2, 12
-ADD R2, R2, .VirtualRegisters
+AND R2 R4 0xF000 // R2 = op1
+BSR R2 R2 12
+ADD R2 R2 .VirtualRegisters
 PSH R2
-IMM R4, 16
-IMM R2, 0
+IMM R4 16
+IMM R2 0
 .Loop4
-SUB R4, R4, 4
-IN R3, %TEXT
-SUB R3, R3, 0x30
-BRL .HexInSkip, R3, 0xA
-SUB R3, R3, 7
+SUB R4 R4 4
+IN R3 %TEXT
+SUB R3 R3 0x30
+BRL .HexInSkip R3 0xA
+SUB R3 R3 7
 .HexInSkip
-BSL R3, R3, R4
-OR R2, R2, R3
-BNZ .Loop4, R4
+BSL R3 R3 R4
+OR R2 R2 R3
+BNZ .Loop4 R4
 POP R3
-STR R3, R2
+STR R3 R2
 JMP .Loop3
 
 .OutHex
-AND R2, R4, 0xF000 // R2 = op1
-BSR R2, R2, 12
-ADD R2, R2, .VirtualRegisters
-LOD R3, R2
-AND R3, R3, 0xF000
-BSR R3, R3, 12
-ADD R3, R3, 0x30
-BRL .HexOut1, R3, 0x3A
-ADD R3, R3, 7
+AND R2 R4 0xF000 // R2 = op1
+BSR R2 R2 12
+ADD R2 R2 .VirtualRegisters
+LOD R3 R2
+AND R3 R3 0xF000
+BSR R3 R3 12
+ADD R3 R3 0x30
+BRL .HexOut1 R3 0x3A
+ADD R3 R3 7
 .HexOut1
-OUT %TEXT, R3
-AND R3, R2, 0x0F00
-AND R4, R2, 0x00F0
-AND R2, R2, 0x000F
-BSR R3, R3, 8
-BSR R4, R4, 4
-ADD R3, R3, 0x30
-BRL .HexOut2, R3, 0x3A
-ADD R3, R3, 7
+OUT %TEXT R3
+AND R3 R2 0x0F00
+AND R4 R2 0x00F0
+AND R2 R2 0x000F
+BSR R3 R3 8
+BSR R4 R4 4
+ADD R3 R3 0x30
+BRL .HexOut2 R3 0x3A
+ADD R3 R3 7
 .HexOut2
-OUT %TEXT, R3
-ADD R4, R4, 0x30
-BRL .HexOut3, R4, 0x3A
-ADD R4, R4, 7
+OUT %TEXT R3
+ADD R4 R4 0x30
+BRL .HexOut3 R4 0x3A
+ADD R4 R4 7
 .HexOut3
-OUT %TEXT, R4
-ADD R2, R2, 0x30
-BRL .HexOut4, R2, 0x3A
-ADD R2, R2, 7
+OUT %TEXT R4
+ADD R2 R2 0x30
+BRL .HexOut4 R2 0x3A
+ADD R2 R2 7
 .HexOut4
-OUT %TEXT, R2
+OUT %TEXT R2
 JMP .Loop3
 
 .ChangeWorkingDirectory
 CAL .Get1op
-STR .CurrentWorkingDirectory, R3
+STR .CurrentWorkingDirectory R3
 JMP .Loop3
 
 .ChangeWorkingDirectoryFromCurrent
 CAL .Get1op
-BRE .CDFCroot, R3, &MAX
-BSL R3, R3, 2 //mult by 4
-ADD R3, R3, 3
-LOD R4, .CurrentWorkingDirectory //load current working directory
-ADD R3, R3, R4 //add offset
-OUT %ADDR, R3
-IN R3, %BUS
-STR .CurrentWorkingDirectory, R3
+BRE .CDFCroot R3 @MAX
+BSL R3 R3 2 //mult by 4
+ADD R3 R3 3
+LOD R4 .CurrentWorkingDirectory //load current working directory
+ADD R3 R3 R4 //add offset
+OUT %ADDR R3
+IN R3 %BUS
+STR .CurrentWorkingDirectory R3
 JMP .Loop3
 .CDFCroot
-LOD R3, .RootDirectory
-STR .CurrentWorkingDirectory, R3
+LOD R3 .RootDirectory
+STR .CurrentWorkingDirectory R3
 JMP .Loop3
 
 //* EXTRA FUNCTIONS *//
 .Error
-OUT %TEXT, 0x45 // 'E'
-OUT %TEXT, 0x72 // 'r'
-OUT %TEXT, 0x72 // 'r'
-OUT %TEXT, 0x6F // 'o'
-OUT %TEXT, 0x72 // 'r'
-OUT %TEXT, 0xA // '\n'
+OUT %TEXT 0x45 // 'E'
+OUT %TEXT 0x72 // 'r'
+OUT %TEXT 0x72 // 'r'
+OUT %TEXT 0x6F // 'o'
+OUT %TEXT 0x72 // 'r'
+OUT %TEXT 0xA // '\n'
 JMP .ShellEnd
 
 .Get2op
-AND R2, R4, 0xF000 // R2 = op1
-AND R3, R4, 0x0F00 // R3 = op2
-STR .Temp, R2
-BSR R2, R2, 12
-BSR R3, R3, 8
-ADD R2, .VirtualRegisters, R2 // Add offset
-ADD R3, .VirtualRegisters, R3
-LOD R4, R2
-LOD R3, R3 // Load values
+AND R2 R4 0xF000 // R2 = op1
+AND R3 R4 0x0F00 // R3 = op2
+STR .Temp R2
+BSR R2 R2 12
+BSR R3 R3 8
+ADD R2 .VirtualRegisters R2 // Add offset
+ADD R3 .VirtualRegisters R3
+LOD R4 R2
+LOD R3 R3 // Load values
 RET
 
 .Get1op
-AND R2, R4, 0xF000 // R2 = op1
-BSR R2, R2, 12
-ADD R2, R2, .VirtualRegisters
-LOD R3, R2
+AND R2 R4 0xF000 // R2 = op1
+BSR R2 R2 12
+ADD R2 R2 .VirtualRegisters
+LOD R3 R2
 RET
 
 .Backspace
