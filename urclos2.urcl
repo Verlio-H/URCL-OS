@@ -19,7 +19,7 @@ MINSTACK 16
 JMP .Initialize
 // Instruction to Address Table
 .InstructionTable
-DW 0
+DW .Loop3
 DW .Immediate // 1
 DW .Add // 2
 DW .Subtract // 3
@@ -325,7 +325,6 @@ POP R0
         LOD R4 R1 // R2 = mem[R1(pointer)]
         AND R2 R4 0x000F // instruction = R2
         .Execute
-            BRZ .Loop3 R2 //exit if no instruction
             ADD R2 R2 .InstructionTable //add offset to instruction table
             LOD R2 R2 //load jump address
             JMP R2 //call instruction
