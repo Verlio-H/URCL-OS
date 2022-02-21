@@ -13,7 +13,7 @@
 // URCL HEADER
 BITS >= 16
 MINREG 4
-MINHEAP 128
+MINHEAP 256
 MINSTACK 16
 
 JMP .Initialize
@@ -158,7 +158,7 @@ BRE .ChangeToRoot R3 0x2F
 BRE .FileFindNoSkip R3 0x2E
 //if first char not / look in /bin (/0)
 LOD R4 .RootDirectory
-ADD R4 R4 3
+ADD R4 R4 7
 OUT %ADDR R4
 IN R4 %BUS
 STR .CurrentWorkingDirectory R4
@@ -321,9 +321,9 @@ POP R0
         BRG .ShellEnd R1 R3
         // R4 = full operation
         // R2 = instruction
-        LOD R4 R1 // R2 = mem[R1(pointer)]
-        AND R2 R4 0x001F // instruction = R2
 
+        LOD R4 R1 // R2 = mem[R1(pointer)]
+        AND R2 R4 0x000F // instruction = R2
         .Execute
             BRZ .Loop3 R2 //exit if no instruction
             ADD R2 R2 .InstructionTable //add offset to instruction table
@@ -355,7 +355,7 @@ JMP .Loop3
 
 .Subtract
 CAL .Get3op
-SUB R4 R4 R3 // Do the subtraction
+SUB R4 R3 R4 // Do the subtraction
 STR R2 R4
 JMP .Loop3
 
@@ -436,8 +436,7 @@ STR .Stackpointer SP
 JMP .Loop3
 
 .SystemCall
-AND R2 R4 0xFF00 // R2 = op1+op2
-BSR R2 R2 8
+BSR R2 R4 8
 ADD R2 R2 .SystemCalls // Add offset
 LOD R3 R2 // Load jump address
 JMP R3
@@ -533,6 +532,7 @@ JMP .Loop3
 .Malloc
 .Free
 JMP .Error
+
 .InHex
 AND R2 R4 0xF000 // R2 = op1
 BSR R2 R2 12
