@@ -23,34 +23,18 @@ DW 0
 DW .Immediate // 1
 DW .Add // 2
 DW .Subtract // 3
-DW .Multiply // 4
-DW .Divide // 5
-DW .Modulo // 6
-DW .Xor // 7
-DW .And // 8
-DW .Or // 9
-DW .ShiftLeft // 10
-DW .ShiftRight // 11
-DW .BranchIfZero // 12
-DW .BranchIfNotZero // 13
-DW .BranchIfEqual // 14
-DW .BranchIfNotEqual // 15
-DW .BranchIfLessThan // 16
-DW .BranchIfGreaterThan // 17
-DW .Jump // 18
-DW .LoadMemory // 19
-DW .StoreMemory // 20
-DW .Move // 21
-DW .Push // 22
-DW .Pop // 23
-DW .Call // 24
-DW .Return // 25
-DW .Add2Word // 26
-DW .Increment // 27
-DW .Decrement // 28
-DW .SystemCall // 29
-DW .Halt // 30
-DW .Error // 31
+DW .And // 4
+DW .Nor // 5
+DW .ShiftLeft // 6
+DW .ShiftRight // 7
+DW .BranchIfGreaterThanOrEqual // 8
+DW .BranchIfEqual // 9
+DW .LoadMemory // 10
+DW .StoreMemory // 11
+DW .Push // 12
+DW .Pop // 13
+DW .SystemCall // 14
+DW .Halt // 15
 
 // System Calls
 .SystemCalls
@@ -62,15 +46,17 @@ DW .DrivePage // 4
 DW .Profile // 5
 DW .CallProgram // 6
 DW .CallProgramFromDirectory // 7
-DW .CheckSupported // 8
-DW .InChar // 9
-DW .OutChar // 10
-DW .InString // 11 (Coming soon)
-DW .OutString // 12 (Coming soon)
+DW .InChar // 8
+DW .OutChar // 9
+DW .OutCharImmediate // 10
+DW .ResolveDirectory // 11 (Coming soon)
+DW .JumpFragment //12 (Coming soon)
 DW .InHex // 13
 DW .OutHex // 14
 DW .ChangeWorkingDirectory // 15
 DW .ChangeWorkingDirectoryFromCurrent // 16
+DW .Malloc // 17 (Coming soon)
+DW .Free // 18 (Coming soon)
 
 //* Interpreter Variables *//
 .Pointer // Stores the address of the next instruction to be executed
@@ -362,134 +348,61 @@ STR R2 R3 // Store the immediate
 JMP .Loop3
 
 .Add
-CAL .Get2op
+CAL .Get3op
 ADD R4 R4 R3 // Do the addition
 STR R2 R4
 JMP .Loop3
 
 .Subtract
-CAL .Get2op
+CAL .Get3op
 SUB R4 R4 R3 // Do the subtraction
 STR R2 R4
 JMP .Loop3
 
-.Multiply
-CAL .Get2op
-MLT R4 R4 R3 // Do the multiplication
-STR R2 R4
-JMP .Loop3
-
-.Divide
-CAL .Get2op
-DIV R4 R4 R3 // Do the division
-STR R2 R4
-JMP .Loop3
-
-.Modulo
-CAL .Get2op
-MOD R4 R4 R3 // Do the modulo
-STR R2 R4
-JMP .Loop3
-
-.Xor
-CAL .Get2op
-XOR R4 R4 R3 // Do the bitwise xor
-STR R2 R4
-JMP .Loop3
-
 .And
-CAL .Get2op
+CAL .Get3op
 AND R4 R4 R3 // Do the bitwise and
 STR R2 R4
 JMP .Loop3
 
-.Or
-CAL .Get2op
-OR R4 R4 R3 // Do the bitwise or
+.Nor
+CAL .Get3op
+NOR R4 R4 R3 // Do the bitwise and
 STR R2 R4
 JMP .Loop3
 
 .ShiftLeft
-CAL .Get2op
-BSL R3 R4 R3
+CAL .Get3op
+BSL R3 R3 R4
 STR R2 R3
 JMP .Loop3
 
 .ShiftRight
-CAL .Get2op
-BSR R3 R4 R3
+CAL .Get3op
+BSR R3 R3 R4
 STR R2 R3
 JMP .Loop3
 
-.BranchIfZero
-CAL .Get2op
-BNZ .BRZend R3
-LOD R3 .Pointer
-ADD R4 R4 R3
-MOV R1 R4
-DEC R1 R1
-.BRZend
-JMP .Loop3
-
-.BranchIfNotZero
-CAL .Get2op
-BRZ .BNZend R3
-LOD R3 .Pointer
-ADD R4 R4 R3
-MOV R1 R4
-DEC R1 R1
-.BNZend
-JMP .Loop3
-
 .BranchIfEqual
-CAL .Get2op
+CAL .Get3op
 BNE .BREend R4 R3
-LOD R3 .JumpDest
+LOD R2 R2
 LOD R4 .Pointer
-ADD R1 R3 R4
-DEC R1 R1
+ADD R1 R2 R4
 .BREend
 JMP .Loop3
 
-.BranchIfNotEqual
-CAL .Get2op
-BRE .BNEend R4 R3
-LOD R3 .JumpDest
+.BranchIfGreaterThanOrEqual
+CAL .Get3op
+BRL .BRGend R3 R4
+LOD R2 R2
 LOD R4 .Pointer
-ADD R1 R3 R4
-DEC R1 R1
-.BNEend
-JMP .Loop3
-
-.BranchIfGreaterThan
-CAL .Get2op
-BLE .BRGend R4 R3
-LOD R3 .JumpDest
-LOD R4 .Pointer
-ADD R1 R3 R4
-DEC R1 R1
+ADD R1 R2 R4
 .BRGend
 JMP .Loop3
 
-.BranchIfLessThan
-CAL .Get2op
-BGE .BRLend R4 R3
-LOD R3 .JumpDest
-LOD R4 .Pointer
-ADD R1 R3 R4
-DEC R1 R1
-.BRLend
-JMP .Loop3
-
-.Jump
-CAL .Get1op
-LOD R4 .Pointer
-ADD R1 R4 R3
-DEC R1 R1
-JMP .Loop3
-
 .LoadMemory
-CAL .Get2op
+CAL .Get3op
 BGE .OutOfSource R3 M0
 ADD R3 R3 .InstructionTable
 .OutOfSource
@@ -498,85 +411,33 @@ STR R2 R3
 JMP .Loop3
 
 .StoreMemory
-CAL .Get2op
-BGE .OutOfSource2 R4 M0
-ADD R4 R4 .InstructionTable
+CAL .Get3op
+LOD R2 R2
+BGE .OutOfSource2 R2 M0
+ADD R2 R2 .InstructionTable
 .OutOfSource2
-STR R4 R3
-JMP .Loop3
-
-.Move
-CAL .Get2op
 STR R2 R3
 JMP .Loop3
 
 .Push
-CAL .Get1op
+CAL .Get3op
+LOD R2 R2
 LOD SP .Stackpointer
-PSH R3
+PSH R2
 STR .Stackpointer SP
 JMP .Loop3
 
 .Pop
-CAL .Get1op
+CAL .Get3op
 LOD SP .Stackpointer
 POP R3
 STR R2 R3
 STR .Stackpointer SP
 JMP .Loop3
 
-.Call
-CAL .Get1op
-LOD R4 .Pointer
-ADD R4 R4 R3
-MOV R1 R3
-DEC R1 R1
-PSH R4
-JMP .Loop3
-
-.Return
-POP R1
-JMP .Loop3
-
-.Add2Word //award for most painful instruction to impliment
-AND R2 R4 0xF000 // R2 = op1
-BSR R2 R2 12
-ADD R2 R2 .VirtualRegisters
-PSH R2
-LOD R2 R2
-LLOD R3 R2 1
-AND R4 R4 0x0F00 // R4 = op2
-BSR R4 R4 8
-ADD R4 R4 .VirtualRegisters
-PSH R4
-LOD R4 R4
-BNC .AddNoCarry R4 R2
-INC R3 R3
-.AddNoCarry
-ADD R4 R4 R2
-POP R2
-LLOD R2 R2 1
-ADD R3 R3 R2
-POP R2
-STR R2 R4
-LSTR R2 1 R3
-JMP .Loop3
-
-.Increment
-CAL .Get1op
-INC R3 R3
-STR R2 R3
-JMP .Loop3
-
-.Decrement
-CAL .Get1op
-DEC R3 R3
-STR R2 R3
-JMP .Loop3
-
 .SystemCall
-AND R2 R4 0x0FE0 // R2 = op1
-BSR R2 R2 5
+AND R2 R4 0xFF00 // R2 = op1+op2
+BSR R2 R2 8
 ADD R2 R2 .SystemCalls // Add offset
 LOD R3 R2 // Load jump address
 JMP R3
@@ -589,42 +450,44 @@ JMP .ShellEnd
 HLT
 
 .DriveAddr
-CAL .Get1op
-OUT %ADDR R3
+CAL .Get3op
+OUT %ADDR R4
 JMP .Loop3
 
 .DriveRead
-CAL .Get1op
+AND R2 R4 0x00F0
+BSR R2 R2 4
+ADD R2 R2 .VirtualRegisters
 IN R3 %BUS
 STR R2 R3
 JMP .Loop3
 
 .DriveWrite
-CAL .Get1op
-OUT %BUS R3
+CAL .Get3op
+OUT %BUS R4
 JMP .Loop3
 
 .DrivePage
-CAL .Get1op
-OUT %PAGE R3
+CAL .Get3op
+OUT %PAGE R4
 JMP .Loop3
 
 .Profile
-CAL .Get1op
-OUT %PROFILE R3
+CAL .Get3op
+OUT %PROFILE R4
 JMP .Loop3
 
 .CallProgram
-CAL .Get1op
+CAL .Get3op
 .CallprogramOpPresent
-STR .Pointer R3 //set pointer
-MOV R1 R3 //set program counter
+STR .Pointer R4 //set pointer
+MOV R1 R4 //set program counter
 STR .VirtualRegisters 0 //set 0 reg
 JMP .Loop3
 
 .CallProgramFromDirectory
-CAL .Get1op
-BSL R3 R3 2 //mult by 4
+CAL .Get3op
+BSL R3 R4 2 //mult by 4
 ADD R3 R3 3
 LOD R4 .CurrentWorkingDirectory //load current working directory
 ADD R3 R3 R4 //add offset
@@ -643,33 +506,33 @@ STR R1 R2
 INC R4 R4
 INC R1 R1
 BNE .cacheloop R4 R3
-IMM R3 M0
+IMM R4 M0
 JMP .CallprogramOpPresent
 
-.CheckSupported
-CAL .Get1op
-OUT %SUPPORTED R3
-IN R3 %SUPPORTED
-STR R2 R3
-JMP .Loop3
-
 .InChar
-AND R2 R4 0xF000 // R2 = op1
-BSR R2 R2 12
+AND R2 R4 0x00F0 // R2 = op3
+BSR R2 R2 4
 ADD R2 R2 .VirtualRegisters
 IN R3 %TEXT
 STR R2 R3
 JMP .Loop3
 
 .OutChar
-CAL .Get1op
-OUT %TEXT R3
+CAL .Get3op
+OUT %TEXT R4
 JMP .Loop3
 
-.InString // Coming soon
-.OutString // Coming soon
-JMP .Error
+.OutCharImmediate
+INC R1 R1
+LOD R2 R1
+OUT %TEXT R2
+JMP .Loop3
 
+.ResolveDirectory
+.JumpFragment
+.Malloc
+.Free
+JMP .Error
 .InHex
 AND R2 R4 0xF000 // R2 = op1
 BSR R2 R2 12
@@ -726,14 +589,14 @@ OUT %TEXT R2
 JMP .Loop3
 
 .ChangeWorkingDirectory
-CAL .Get1op
-STR .CurrentWorkingDirectory R3
+CAL .Get3op
+STR .CurrentWorkingDirectory R4
 JMP .Loop3
 
 .ChangeWorkingDirectoryFromCurrent
-CAL .Get1op
-BRE .CDFCroot R3 @MAX
-BSL R3 R3 2 //mult by 4
+CAL .Get3op
+BRE .CDFCroot R4 @MAX
+BSL R3 R4 2 //mult by 4
 ADD R3 R3 3
 LOD R4 .CurrentWorkingDirectory //load current working directory
 ADD R3 R3 R4 //add offset
@@ -756,23 +619,18 @@ OUT %TEXT 0x72 // 'r'
 OUT %TEXT 0xA // '\n'
 JMP .ShellEnd
 
-.Get2op
+.Get3op
 AND R2 R4 0xF000 // R2 = op1
 AND R3 R4 0x0F00 // R3 = op2
-STR .Temp R2
+AND R4 R4 0x00F0 // R3 = op3
 BSR R2 R2 12
 BSR R3 R3 8
+BSR R4 R4 4
 ADD R2 .VirtualRegisters R2 // Add offset
 ADD R3 .VirtualRegisters R3
-LOD R4 R2
-LOD R3 R3 // Load values
-RET
-
-.Get1op
-AND R2 R4 0xF000 // R2 = op1
-BSR R2 R2 12
-ADD R2 R2 .VirtualRegisters
-LOD R3 R2
+ADD R4 .VirtualRegisters R4
+LOD R3 R3
+LOD R4 R4 // Load values
 RET
 
 .Backspace
