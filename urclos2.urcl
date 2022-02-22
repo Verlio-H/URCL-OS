@@ -89,9 +89,10 @@ DW 0 // R10
 DW 0 // R11
 DW 0 // R12
 DW 0 // R13
-DW 0 // R14
 .Stackpointer
-DW 0 // Stack Pointer (R15)
+DW 0 // Stack Pointer (R14)
+.JumpDest
+DW 0 // Jump Dest (R15)
 
 
 .CurrentWorkingDirectory
@@ -120,12 +121,11 @@ DW 0xFFFF
 .Mem0
 DW M0
 
-.SpLim
+.Temp
 DW 0
 
 .Initialize
 STR .Stackpointer SP //initialize starting sp
-STR .SpLim SP
 STR M0 0
 
 //terminal but new but terminal but yeah and stuff
@@ -527,141 +527,6 @@ OUT %TEXT R2
 JMP .Loop3
 
 .ResolveDirectory
-PSH 0xA
-PSH R4
-PSH R1
-MOV R2 SP
-LOD R4 .SpLim
-.RDIRFindBeginningLoop
-LOD R3 R2
-INC R2 R2
-BRE .RDIRNoPath R2 R4
-BNE .RDIRFindBeginningLoop R3 0x20
-SUB R2 R2 2
-LOD R3 R2
-//now R2 = beginning of a path
-BRE .RDIRSlash R3 0x2F
-LOD R3 R2
-LOD R1 .CurrentWorkingDirectory
-.RDIRLoop
-OUT %ADDR R1
-IN R4 %BUS
-BRZ .Error R4
-AND R4 R4 0xFF
-BRE .RDIRFileFoundAttempt R4 R3
-ADD R1 R1 4
-JMP .RDIRLoop
-
-.RDIRSlash
-LOD R1 .RootDirectory //0
-DEC R2 R2
-LOD R3 R2
-BNE .RDIRLoop R3 0xA
-MOV R3 R1
-JMP .RDIREnd
-
-.RDIRNoPath
-LOD R3 .CurrentWorkingDirectory
-JMP .RDIREnd
-
-// /bin/
-.RDIRFileFoundAttempt
-//get length & address of first char
-PSH R2 //original SP
-OUT %ADDR R1
-IN R4 %BUS
-BSR R4 R4 8 //name length (R4 max size is 255)
-ADD R1 R1 3 //add 3 to get to address word 
-PSH R1 //address word
-OUT %ADDR R1
-IN R1 %BUS
-SUB R1 R1 R4 //get address of second name char
-.RDIRLodNextChar
-OUT %ADDR R1
-IN R3 %BUS
-//load next char
-PSH R1
-DEC R2 R2
-LOD R1 R2
-PSH R2
-//if R4 == 0 && nextchar == (\n || ' ') then file found
-SETE R2 R1 0xA
-ADD R2 R2 R4
-BRE .RDIRFileFound R2 @MAX
-SETE R2 R1 0x20
-ADD R2 R2 R4
-BRE .RDIRFileFound R2 @MAX
-//if R4 == 0 && nextchar == / then folder found
-SETE R2 R1 0x2F
-ADD R2 R2 R4
-BRE .RDIRFolderFound R2 @MAX
-//if (R4 != 0 && nextchar == (/ || \n || ' ')) || (R4 == 0 && nextchar != (/ || \n || ' ')) then attempt failed
-SETNE R2 R4 0 //explaination of this condition check: if R4 is not 0 R2 = -1 if R2 + nextchar produces a carry (R2 = -1 and nextchar != 0) then R2 = -1 then after adding next char check if the result is one less than expected char
-SETC R2 R2 R1
-ADD R2 R2 R1
-BRE .RDIRAttemptFailed R2 9
-BRE .RDIRAttemptFailed R2 0x2E
-BRE .RDIRAttemptFailed R2 0x1F
-PSH R3
-SETE R2 R1 0x2F //nextchar == (/ || \n || ' ')
-SETE R3 R1 0xA
-OR R2 R2 R3
-SETE R3 R1 0x20
-OR R2 R2 R3
-SETE R3 R4 0 //R4 == 0
-NOT R2 R2 //nextchar != (/ || \n || ' ') &MAX
-BRC .RDIRAttemptFailed R2 R3 //if both are true
-POP R3
-//if R3 != nextchar then attempt failed
-BNE .RDIRAttemptFailed R3 R1
-//else continue depth
-POP R2
-POP R1
-DEC R4 R4
-INC R1 R1
-JMP .RDIRLodNextChar
-.RDIRAttemptFailed
-//pop useless crap
-POP R0 
-POP R0 
-POP R1
-POP R2 //Reset SP
-//check next file in dir
-INC R1 R1 //R1 points to next file
-OUT %ADDR R1
-IN R3 %BUS
-BNZ .RDIRFileFoundAttempt R3
-JMP .Error
-
-.RDIRFolderFound
-POP R2
-POP R0
-POP R1
-POP R0
-OUT %ADDR R1
-IN R1 %BUS
-DEC R2 R2
-LOD R3 R2
-JMP .RDIRLoop
-
-.RDIRFileFound
-//victory royale condition
-POP R0 //pointer to 0xa
-POP R1
-POP R3 //address pointer
-
-POP R0
-//R4 == 0 at this point meaning that R1 must equal start of file
-MOV R3 R1 //start of the file
-.RDIREnd
-POP R1
-POP R4
-AND R2 R4 0x00F0
-BSR R2 R2 4
-ADD R2 R2 .VirtualRegisters
-STR R2 R3
-JMP .Loop3
-
 .JumpFragment
 .Malloc
 .Free
