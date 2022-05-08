@@ -1,11 +1,14 @@
 // THIS IS A BETA AND BUGS MAY BE PRESENT
+// URCLOS 2 WILL SOON BE OUTDATED AND REPLACED WITH URCLOS 3
 
-// URCL OS v2.3
+// URCL OS v2.3.2
 
 // Whats new in v2.3:
 // Rewrite of SILK to match Core URCL better, Added OUTCI syscall, Added pwd, and cat
 // Whats new in v2.3.1:
 // Added RDIR syscall and rewrote programs to use directories instead of indexes
+// Whats new in v2.3.2:
+// Added FNS syscall
 
 // Whats coming next:
 // Fragmentation
@@ -50,14 +53,15 @@ DW .CallProgramFromDirectory // 7
 DW .InChar // 8
 DW .OutChar // 9
 DW .OutCharImmediate // 10
-DW .ResolveDirectory // 11 (Coming soon)
-DW .JumpFragment //12 (Coming soon)
+DW .ResolveDirectory // 11
+DW .FindNextSpace //12
 DW .InHex // 13
 DW .OutHex // 14
 DW .ChangeWorkingDirectory // 15
 DW .ChangeWorkingDirectoryFromCurrent // 16
-DW .Malloc // 17 (Coming soon)
-DW .Free // 18 (Coming soon)
+DW .JumpFragment // 17 (Coming soon)
+DW .Malloc // 18 (Coming soon)
+DW .Free // 19 (Coming soon)
 
 //* Interpreter Variables *//
 .Pointer // Stores the address of the next instruction to be executed
@@ -119,6 +123,9 @@ DW M0
 
 .SpLim
 DW 0
+
+.CurrentStorageSearchADDR
+DW 33
 
 .Initialize
 STR .Stackpointer SP //initialize starting sp
@@ -363,7 +370,7 @@ JMP .Loop3
 
 .Nor
 CAL .Get3op
-NOR R4 R4 R3 // Do the bitwise and
+NOR R4 R4 R3 // Do the bitwise nor
 STR R2 R4
 JMP .Loop3
 
@@ -659,10 +666,70 @@ ADD R2 R2 .VirtualRegisters
 STR R2 R3
 JMP .Loop3
 
-.JumpFragment
-.Malloc
-.Free
-JMP .Error
+.FindNextSpace
+PSH R1 //2
+AND R2 R2 0x00F0
+BSR R2 R2 4
+ADD R2 R2 .VirtualRegisters
+PSH R2 //1
+LOD R3 R2 //16
+PSH R3 //0
+LOD R4 .CurrentStorageSearchADDR //33
+.FNS_loop
+OUT %ADDR R4 
+IN R2 %BUS //0x0
+BRE .FNS_MAX R2 @MAX
+ADD R4 R4 2
+OUT %ADDR R4
+IN R3 %BUS //0x80
+INC R4 R4
+OUT %ADDR R4
+IN R1 %BUS //0xD3
+BRE .FNS_attempt R2 0
+ADD R4 R3 R1 //get next possible spot 0x40
+JMP .FNS_loop
+
+.FNS_MAX
+INC R4 R4
+JMP .FNS_loop
+
+.FNS_attempt
+BRE .FNS_restart R3 @MAX
+ADD R3 R3 4
+BGE .FNS_suckex R3 R2 //if big enuf
+ADD R4 R2 R1
+JMP .FNS_loop
+.FNS_suckex
+POP R3
+SUB R3 R3 4
+DEC R4 R4
+PSH R4
+OUT %ADDR R4
+OUT %BUS R3
+ADD R4 R4 2
+ADD R4 R4 R3
+OUT %ADDR R4
+OUT %BUS R0
+SUB R1 R2 R3
+SUB R1 R1 4
+ADD R4 R4 2
+OUT %ADDR R4
+OUT %BUS R1
+INC R4 R4
+OUT %ADDR R4
+INC R4 R4
+OUT %BUS R4
+POP R4
+SUB R4 R4 2
+OUT %NUMB R4
+POP R0
+POP R2
+STR R2 R4
+POP R1
+JMP .Loop3
+.FNS_restart
+MOV R4 R0
+JMP .FNS_loop
 
 .InHex
 AND R2 R4 0xF000 // R2 = op1
@@ -739,6 +806,10 @@ JMP .Loop3
 LOD R3 .RootDirectory
 STR .CurrentWorkingDirectory R3
 JMP .Loop3
+
+.JumpFragment
+.Malloc
+.Free
 
 //* EXTRA FUNCTIONS *//
 .Error

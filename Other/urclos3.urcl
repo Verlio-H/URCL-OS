@@ -1,0 +1,716 @@
+// THIS IS AN ALPHA AND BUGS WILL BE PRESENT
+// MANY FEATURES ARE NOT IMPLIMENTED
+
+// URCL OS v3.0.0 (pre release)
+
+// Whats new in v3.0.0:
+// Rewrite of all systemcalls
+// Multithreading
+// Memory management
+// Slight change in IL
+
+// Whats next:
+// More system utils
+// File fragmentation
+// More system calls
+
+//HEADERS
+BITS >= 16
+MINREG 8
+MINHEAP 1024
+MINSTACK 6
+
+.Initialize
+OUT %ADDR 11 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
+IN R4 %BUS
+BRZ .Initialize_NoBoot R4
+STR .OSVar_STARTUPPROG R4
+STR .OSVar_MALLOCSADDR M0
+
+.Initialize_Memory
+DEC R5 @MINHEAP //use this on bad emu that no have @HEAP (I am looking at you bram)
+BGE .Initialize_NoBoot R5 @SMAX
+STR M0 R5
+ADD R6 M0 @MINHEAP
+LSTR R6 -1 @MAX
+JMP .CreateStartingProc
+
+.Initialize_NoBoot
+OUT %TEXT 'E'
+OUT %TEXT 'r'
+OUT %TEXT 'r'
+OUT %TEXT 'o'
+OUT %TEXT 'r'
+OUT %TEXT '\n'
+HLT
+
+.InstructionTable
+DW .Ins_Nop
+DW .Ins_Immediate // 1
+DW .Ins_Add // 2
+DW .Ins_Subtract // 3
+DW .Ins_And // 4
+DW .Ins_Nor // 5
+DW .Ins_ShiftLeft // 6
+DW .Ins_ShiftRight // 7
+DW .Ins_BranchIfGreaterThanOrEqual // 8
+DW .Ins_BranchIfEqual // 9
+DW .Ins_LoadMemory // 10
+DW .Ins_StoreMemory // 11
+DW .Ins_Push // 12
+DW .Ins_Pop // 13
+DW .Ins_BulkImmediate //14
+DW .Ins_SystemCall //15
+
+.SystemCalls
+DW .Scal_Exit //0
+ DW .Scal_Error//DW .Scal_Creat //1
+ DW .Scal_Error//DW .Scal_Open //2
+ DW .Scal_Error//DW .Scal_Close //3
+ DW .Scal_Error//DW .Scal_Read //4
+ DW .Scal_Error//DW .Scal_Write //5
+ DW .Scal_Error//DW .Scal_Lseek //6
+DW .Scal_Error //.Scal_Link //7
+DW .Scal_Error //.Scal_Unlink //8
+DW .Scal_Error //.Scal_Stat //9
+ DW .Scal_Error//DW .Scal_Exec //10
+DW .Scal_Fork //11
+DW .Scal_GetPID //12
+ DW .Scal_Error//DW .Scal_WaitPID //13
+ DW .Scal_Error//DW .Scal_Kill //14
+DW .Scal_Chdir // //15
+DW .Scal_Error //.Scal_Stime //16
+DW .Scal_Error //.Scal_time //17
+ DW .Scal_Error//DW .Scal_Rdir //18
+DW .Scal_Malloc //19
+DW .Scal_Free //20
+DW .Scal_Error //.Scal_Realloc //21
+DW .Scal_Puts //22
+DW .Scal_Putc //23
+DW .Scal_Putci //24
+ DW .Scal_Error//DW .Scal_Gets //25
+DW .Scal_Getc //26
+DW .Scal_Error //.Scal_Memcmp //27
+DW .Scal_Error //.Scal_Memcpy //28
+DW .Scal_Error //.Scal_Rand //29
+DW .Scal_Error //.Scal_Strcmp //30
+DW .Scal_Error //.Scal_Strcpy //31
+DW .Scal_Error //.Scal_Strlen //32
+DW .Scal_Lodosvar //33
+DW .Scal_Strosvar //34
+ DW .Scal_Error//DW .Scal_Getdirname //35
+ DW .Scal_Error//DW .Scal_NthString //36
+
+//OSVariables:
+.OSVar_CWD
+DW 0 //CWD
+.OSVar_ROOT
+DW 0
+.OSVar_PATH
+DW 0 //configured on startup (/bin)
+.OSVar_SHELL
+DW 0 //configured on startup (/bin/sh)
+.OSVar_ECHO
+DW 1
+.OSVar_MEMLIMIT
+DW 0xFFFF
+.OSVar_BITS
+DW @BITS
+.OSVar_MEM0
+DW M0
+.OSVar_MALLOCSADDR
+DW M0
+.OSVar_SEEKOFFSET
+DW 0
+.OSVar_USERNAME
+DW @MAX //configured on startup
+.OSVar_CPP
+DW 0
+.OSVar_LASTEXITCODE
+DW 0
+.OSVar_EXIT
+DW 0
+.OSVar_STARTUPPROG
+DW 0
+.OSVar_ERROR
+DW 0
+
+//0 = successful
+//1 = other
+//2 = invalid directory
+//3 = invalid operand
+//4 = out of memory
+//5 = out of disk space
+//6 = invalid systemcall
+//7 = EOF reached
+//8 = invalid pid
+//9 = substring not found
+//10 = stack overflow
+//11 = stack underflow
+
+.OSVar_Restricted_EndingString
+DW [10 "halting..." 10 0]
+.OSVar_Restricted_CurrentFinalProc
+DW .ProcessDescriptors
+.OSVar_Restricted_NextPID
+DW 1
+
+.VirtualRegisters
+DW 0 //0
+DW 0 //1
+DW 0 //2
+DW 0 //3
+DW 0 //4
+DW 0 //5
+DW 0 //6
+DW 0 //7
+DW 0 //8
+DW 0 //9
+DW 0 //A
+DW 0 //B
+DW 0 //C
+DW 0 //D
+DW 0 //E
+.VirtualRegisters_StackPointer
+DW 0 //F
+DW 0 //secret register for translations to use shhhhh
+
+.FileDescriptors
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+//below is not file descriptor
+DW 0
+.ProcessDescriptors //pointers to them
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+
+//Process descriptor format:
+//PID
+//Start of program
+//Length of program
+//Current read address
+//Seek value
+//Stack location
+//Error status
+//Registers (1-15)
+
+//Memory Block format:
+//@MSB = allocated?
+//Rest = length
+
+
+
+
+//INSTRUCTIONS
+//Op1 = R3
+//Op2 = R2
+//Op3 = R1
+//PC = R4
+//CurrentProc = R5
+//R6 = R8 = temp
+.Ins_Nop
+RET
+
+.Ins_Immediate
+ADD R3 R3 .VirtualRegisters
+INC R4 R4
+OUT %ADDR R4
+IN R6 %BUS
+STR R3 R6
+RET
+
+.Ins_Add
+ADD R3 R3 .VirtualRegisters
+ADD R2 R2 .VirtualRegisters
+ADD R1 R1 .VirtualRegisters
+LOD R2 R2
+LOD R1 R1
+ADD R1 R2 R1
+STR R3 R1
+RET
+
+.Ins_Subtract
+ADD R3 R3 .VirtualRegisters
+ADD R2 R2 .VirtualRegisters
+ADD R1 R1 .VirtualRegisters
+LOD R2 R2
+LOD R1 R1
+SUB R1 R2 R1
+STR R3 R1
+RET
+
+.Ins_And
+ADD R3 R3 .VirtualRegisters
+ADD R2 R2 .VirtualRegisters
+ADD R1 R1 .VirtualRegisters
+LOD R2 R2
+LOD R1 R1
+AND R1 R1 R2
+STR R3 R1
+RET
+
+.Ins_Nor
+ADD R3 R3 .VirtualRegisters
+ADD R2 R2 .VirtualRegisters
+ADD R1 R1 .VirtualRegisters
+LOD R2 R2
+LOD R1 R1
+NOR R1 R1 R2
+STR R3 R1
+RET
+
+.Ins_ShiftLeft
+ADD R3 R3 .VirtualRegisters
+ADD R2 R2 .VirtualRegisters
+ADD R1 R1 .VirtualRegisters
+LOD R2 R2
+LOD R1 R1
+BSL R1 R2 R1
+STR R3 R1
+RET
+
+.Ins_ShiftRight
+ADD R3 R3 .VirtualRegisters
+ADD R2 R2 .VirtualRegisters
+ADD R1 R1 .VirtualRegisters
+LOD R2 R2
+LOD R1 R1
+BSR R1 R2 R1
+STR R3 R1
+RET
+
+.Ins_BranchIfGreaterThanOrEqual
+ADD R2 R2 .VirtualRegisters
+ADD R1 R1 .VirtualRegisters
+LOD R2 R2
+LOD R1 R1
+BRL .Ins_BranchIfGreaterThanOrEqual_NoBranch R2 R1
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+LOD R6 R5 //pd pointer
+LLOD R6 R6 1 //load start of program
+ADD R4 R6 R3 //branc
+.Ins_BranchIfGreaterThanOrEqual_NoBranch
+RET
+
+.Ins_BranchIfEqual
+ADD R2 R2 .VirtualRegisters
+ADD R1 R1 .VirtualRegisters
+LOD R2 R2
+LOD R1 R1
+BNE .Ins_BranchIfEqual_NoBranch R2 R1
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+LOD R6 R5 //pd pointer
+LLOD R6 R6 1 //load start of program
+ADD R4 R6 R3 //branc
+.Ins_BranchIfEqual_NoBranch
+RET
+
+.Ins_LoadMemory
+ADD R2 R2 .VirtualRegisters
+ADD R3 R3 .VirtualRegisters
+LOD R2 R2
+CPY R3 R2
+RET
+
+.Ins_StoreMemory
+ADD R2 R2 .VirtualRegisters
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+CPY R3 R2
+RET
+
+.Ins_Push
+LOD R6 R5
+LLOD R7 R6 5 //stack location
+BRZ .Ins_Push_CreateStack R7
+ADD R8 R7 63 //R8 = stack cap
+LLOD R6 .VirtualRegisters 15
+BGE .Ins_Push_StackOverflow R6 R8
+BRL .Ins_Push_StackUnderflow R6 R7
+.Ins_Push_CreateStack_Ret
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+STR R7 R3
+INC R7 R7
+RET
+
+.Ins_Push_CreateStack
+LSTR .VirtualRegisters 16 64
+PSH R3
+IMM R3 16
+CAL .Scal_Malloc
+POP R3
+LLOD R7 .VirtualRegisters 16 //address
+LSTR R6 5 R7
+JMP .Ins_Push_CreateStack_Ret
+
+
+.Ins_Push_StackOverflow
+STR .OSVar_ERROR 10
+RET
+
+.Ins_Push_StackUnderflow
+STR .OSVar_ERROR 11
+RET
+
+.Ins_Pop
+LOD R6 R5
+LLOD R6 R6 5 //stack location
+BRZ .Ins_Push_StackUnderflow R6
+ADD R7 R6 63
+LLOD R8 .VirtualRegisters 15
+BGE .Ins_Push_StackOverflow R8 R7
+BRL .Ins_Push_StackUnderflow R8 R6
+ADD R3 R3 .VirtualRegisters
+CPY R3 R8
+DEC R8 R8
+LSTR .VirtualRegisters 15 R8
+RET
+
+.Ins_BulkImmediate
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+.Ins_BulkImmediate_Loop
+INC R4 R4
+OUT %ADDR R4
+IN R6 %BUS
+STR R3 R6
+INC R3 R3
+BNZ .Ins_BulkImmediate_Loop R6
+RET
+
+.Ins_SystemCall
+BSL R2 R2 4
+OR R1 R1 R2
+BRG .Ins_SystemCall_InvalidSyscall R1 36
+LLOD R1 R1 .SystemCalls
+CAL R1
+CAL .ContextSwitch
+RET
+
+.Ins_SystemCall_InvalidSyscall
+STR .OSVar_ERROR 6
+RET
+
+//SYSTEM CALLS
+//R1 + R2 = temp
+//Operand = R3
+//PC = R4
+//CurrentProc = R5
+//R6 - R8 = temp
+
+.Scal_Exit
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3 //exit code
+PSH R5
+PSH R3
+LOD R3 R5
+DEC R3 R3
+CAL .Scal_Free_SkipGet
+POP R3
+POP R5
+STR .OSVar_LASTEXITCODE R3
+LLOD R1 R5 -1 //the one before
+BRZ .END R1
+LOD R1 .OSVar_Restricted_CurrentFinalProc
+DEC R1 R1
+STR .OSVar_Restricted_CurrentFinalProc R1
+LOD R2 R1
+STR R5 R2 //puts last into current
+STR R1 0
+IMM R5 .ProcessDescriptors
+RET
+
+.Scal_Fork
+PSH R3
+LOD R6 .OSVar_Restricted_NextPID
+LSTR R3 .VirtualRegisters R6
+INC R6 R6
+STR .OSVar_Restricted_NextPID R6
+IMM R3 16
+LSTR .VirtualRegisters 16 22
+CAL .Scal_Malloc
+LLOD R3 .VirtualRegisters 16
+LOD R7 .OSVar_Restricted_CurrentFinalProc
+LSTR R7 1 R3
+LOD R6 .OSVar_Restricted_NextPID
+DEC R6 R6
+STR R3 R6
+INC R3 R3
+LOD R1 R5
+INC R1 R1
+MOV R2 R0
+.Scal_Fork_UpdateLoop
+CPY R3 R1
+INC R3 R3
+INC R1 R1
+INC R2 R2
+BRL .Scal_Fork_UpdateLoop R2 21
+POP R1
+SUB R3 R3 16
+LSTR R3 R1 R0
+RET
+
+.Scal_GetPID
+ADD R3 R3 .VirtualRegisters
+LOD R1 R5
+CPY R3 R1 //haha I use that 1 cisc instruction noob
+RET
+
+.Scal_Chdir
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+STR .OSVar_CWD R3
+RET
+
+.Scal_Malloc
+ADD R3 R3 .VirtualRegisters
+PSH R3
+LOD R3 R3 //malloc size
+BGE .Scal_Malloc_InvalidOp R3 @SMAX
+LOD R1 .OSVar_MALLOCSADDR
+PSH R0
+.Scal_Malloc_Loop
+MOV R7 R1
+LOD R1 R1
+BRE .Scal_Malloc_EOM R1 @MAX
+AND R2 R1 @SMAX
+AND R6 R1 @MSB
+MOV R1 R7
+BRZ .Scal_Malloc_Attempt R6
+.Scal_Malloc_Attempt_Return
+ADD R1 R1 R2
+INC R1 R1
+JMP .Scal_Malloc_Loop
+
+.Scal_Malloc_Attempt
+BRL .Scal_Malloc_Checkformerge R2 R3
+OR R6 R3 @MSB
+STR R1 R6
+POP R0
+POP R6
+INC R1 R1
+STR R6 R1 //return address of yeah
+BRE .Scal_Malloc_Success R2 R3
+ADD R1 R1 R3
+SUB R2 R2 R3
+DEC R2 R2
+STR R1 R2
+.Scal_Malloc_Success
+DEC R1 R1
+STR .OSVar_MALLOCSADDR R1
+RET
+
+.Scal_Malloc_Checkformerge
+PSH R1
+ADD R1 R1 R2
+INC R1 R1
+LOD R6 R1
+POP R1
+BRN .Scal_Malloc_Loop R6
+ADD R2 R2 R6
+STR R1 R2
+JMP .Scal_Malloc_Loop
+
+.Scal_Malloc_EOM
+POP R1
+BGE .Scal_Malloc_OOM R1 1
+INC R1 R1
+PSH R1
+IMM R1 M0
+JMP .Scal_Malloc_Loop
+
+.Scal_Malloc_OOM
+STR .OSVar_ERROR 4
+POP R0
+POP R0
+RET
+
+.Scal_Malloc_InvalidOp
+STR .OSVar_ERROR 3
+POP R0
+POP R0
+RET
+
+.Scal_Free
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+.Scal_Free_SkipGet
+LOD R1 R3
+AND R1 R1 @SMAX
+STR R3 R1
+RET
+
+.Scal_Puts
+ADD R3 R3 .VirtualRegisters
+LOD R1 R3
+CAL .PrintString
+RET
+
+.Scal_Putc
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+OUT %TEXT R3
+RET
+
+.Scal_Putci
+INC R4 R4
+OUT %ADDR R4
+IN R3 %BUS
+OUT %TEXT R3
+RET
+
+.Scal_Getc //TODO: make non blocking
+ADD R3 R3 .VirtualRegisters
+IN R1 %TEXT
+STR R3 R1
+RET
+
+.Scal_Error
+STR .OSVar_ERROR 6
+JMP .Exec_Loop
+
+.Scal_Lodosvar
+MOV R1 R3
+IMM R3 16
+CAL .Ins_Pop
+LLOD R3 .VirtualRegisters 16
+LLOD R6 .OSVar_CWD R1
+LSTR .VirtualRegisters R3 R6
+RET
+
+.Scal_Strosvar
+LLOD R3 .OSVar_CWD R3
+CAL .Ins_Push
+RET
+
+//HELPER FUNCTIONS
+.PrintString //r1 = string address
+LOD R2 R1
+BRZ .PrintString_Exit R2
+OUT %TEXT R2
+INC R1 R1
+JMP .PrintString
+.PrintString_Exit
+RET
+
+.END //final graceful exit routine
+IMM R1 .OSVar_Restricted_EndingString
+CAL .PrintString
+HLT
+
+//EXECUTIONSTUFF
+
+.ContextSwitch
+LOD R7 R5
+LSTR R7 3 R4
+LOD R8 .OSVar_SEEKOFFSET
+LSTR R7 4 R8
+LOD R8 .OSVar_ERROR
+LSTR R7 6 R8
+//STR Regs
+ADD R7 R7 7
+ADD R6 .VirtualRegisters 1
+.ContextSwitch_StrRegLoop
+//OUT %NUMB R7
+//OUT %TEXT 0xA
+CPY R7 R6
+INC R6 R6
+INC R7 R7
+BLE .ContextSwitch_StrRegLoop R6 .VirtualRegisters_StackPointer
+//LOD next proc
+INC R5 R5
+LOD R7 R5
+BRE .ContextSwitch_Restartprocloop R7 0
+.ContextSwitch_Restartprocloop_Return
+LLOD R4 R7 3
+LLOD R8 R7 4
+STR .OSVar_SEEKOFFSET R8
+LLOD R8 R7 6
+STR .OSVar_ERROR R8
+//LOD Regs
+ADD R7 R7 7
+ADD R6 .VirtualRegisters 1
+.ContextSwitch_LodRegLoop
+CPY R6 R7
+INC R6 R6
+INC R8 R8
+BLE .ContextSwitch_LodRegLoop R6 .VirtualRegisters_StackPointer
+RET
+
+.ContextSwitch_Restartprocloop
+IMM R5 .ProcessDescriptors
+LOD R7 R5
+BRZ .END R7
+JMP .ContextSwitch_Restartprocloop_Return
+
+
+.CreateStartingProc
+IMM R3 16
+LSTR 16 .VirtualRegisters 22
+CAL .Scal_Malloc
+LLOD R3 .VirtualRegisters 16
+STR .ProcessDescriptors R3
+STR R3 R0 //set PID to 0
+LSTR R3 1 R4
+OUT %ADDR 10
+IN R5 %BUS
+ADD R5 R4 R5
+LSTR R3 2 R5
+LSTR R3 3 R4
+LSTR R3 4 R0
+LSTR R3 5 R0
+LSTR R3 6 R0
+ADD R3 R3 7
+ADD R5 R3 15
+.CreateStartingProc_Loop
+STR R3 R0
+INC R3 R3
+BRL .CreateStartingProc_Loop R3 R5
+IMM R5 .ProcessDescriptors
+
+.Exec_Loop
+OUT %ADDR R4
+IN R6 %BUS
+BSR R3 R6 12
+BSR R2 R6 8
+BSR R1 R6 4
+AND R2 R2 0xF
+AND R1 R1 0xF
+AND R6 R6 0xF
+ADD R6 R6 .InstructionTable
+LOD R6 R6
+CAL R6
+INC R4 R4
+STR .VirtualRegisters R0 //keep R0 as 0
+JMP .Exec_Loop
