@@ -73,7 +73,7 @@ DW .Scal_Exit //0
 DW .Scal_Error //.Scal_Link //7
 DW .Scal_Error //.Scal_Unlink //8
 DW .Scal_Error //.Scal_Stat //9
- DW .Scal_Error//DW .Scal_Exec //10
+DW .Scal_Exec //10
 DW .Scal_Fork //11
 DW .Scal_GetPID //12
  DW .Scal_Error//DW .Scal_WaitPID //13
@@ -215,7 +215,7 @@ DW 0
 //Process descriptor format:
 //PID
 //Start of program
-//Length of program
+//Name of program (string pointer)
 //Current read address
 //Seek value
 //Stack location
@@ -318,6 +318,7 @@ LOD R3 R3
 LOD R6 R5 //pd pointer
 LLOD R6 R6 1 //load start of program
 ADD R4 R6 R3 //branc
+DEC R4 R4
 .Ins_BranchIfGreaterThanOrEqual_NoBranch
 RET
 
@@ -332,6 +333,7 @@ LOD R3 R3
 LOD R6 R5 //pd pointer
 LLOD R6 R6 1 //load start of program
 ADD R4 R6 R3 //branc
+DEC R4 R4
 .Ins_BranchIfEqual_NoBranch
 RET
 
@@ -449,6 +451,14 @@ LOD R2 R1
 STR R5 R2 //puts last into current
 STR R1 0
 IMM R5 .ProcessDescriptors
+RET
+
+.Scal_Exec
+ADD R3 R3 .VirtualRegisters
+LOD R4 R3
+LOD R1 R5
+LSTR R1 1 R4 //update start of program
+DEC R4 R4
 RET
 
 .Scal_Fork
