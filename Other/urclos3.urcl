@@ -20,8 +20,6 @@ MINREG 8
 MINHEAP 1024
 MINSTACK 10
 
-@DEBUG ONWRITE .test
-
 .Initialize
 OUT %ADDR 11 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
 IN R4 %BUS
@@ -91,7 +89,7 @@ DW .Scal_Error //.Scal_Realloc //21
 DW .Scal_Puts //22
 DW .Scal_Putc //23
 DW .Scal_Putci //24
- DW .Scal_Error//DW .Scal_Gets //25
+DW .Scal_Gets //25
 DW .Scal_Getc //26
 DW .Scal_Error //.Scal_Memcmp //27
 DW .Scal_Error //.Scal_Memcpy //28
@@ -125,6 +123,8 @@ DW M0
 DW M0
 .OSVar_USERNAME
 DW @MAX //configured on startup
+.OSVar_SEEKOFFSET
+DW 0
 .OSVar_CPP
 DW 0
 .OSVar_PROCNAME
@@ -353,28 +353,33 @@ CPY R3 R2
 RET
 
 .Ins_Push
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
 LOD R6 R5
 LLOD R7 R6 5 //stack location
 BRZ .Ins_Push_CreateStack R7
-ADD R8 R7 63 //R8 = stack cap
+ADD R8 R7 64 //R8 = stack cap
 LLOD R6 .VirtualRegisters 15
 BGE .Ins_Push_StackOverflow R6 R8
 BRL .Ins_Push_StackUnderflow R6 R7
 .Ins_Push_CreateStack_Ret
-ADD R3 R3 .VirtualRegisters
-LOD R3 R3
-STR R7 R3
-INC R7 R7
+INC R6 R6
+STR R6 R3
+LSTR .VirtualRegisters 15 R6
 RET
 
 .Ins_Push_CreateStack
 LSTR .VirtualRegisters 16 64
 PSH R3
 IMM R3 16
+PSH R6
 CAL .Scal_Malloc
+POP R6
 POP R3
 LLOD R7 .VirtualRegisters 16 //address
+DEC R7 R7
 LSTR R6 5 R7
+MOV R6 R7
 JMP .Ins_Push_CreateStack_Ret
 
 
@@ -390,10 +395,10 @@ RET
 LOD R6 R5
 LLOD R6 R6 5 //stack location
 BRZ .Ins_Push_StackUnderflow R6
-ADD R7 R6 63
+ADD R7 R6 64
 LLOD R8 .VirtualRegisters 15
-BGE .Ins_Push_StackOverflow R8 R7
-BRL .Ins_Push_StackUnderflow R8 R6
+BRG .Ins_Push_StackOverflow R8 R7
+BLE .Ins_Push_StackUnderflow R8 R6
 ADD R3 R3 .VirtualRegisters
 CPY R3 R8
 DEC R8 R8
@@ -619,6 +624,31 @@ IN R3 %BUS
 OUT %TEXT R3
 RET
 
+.Scal_Gets //TODO: make non blocking
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+PSH R3
+IMM R3 16
+CAL .Ins_Pop
+LLOD R2 .VirtualRegisters 16
+IMM R3 16
+CAL .Ins_Pop
+LLOD R6 .VirtualRegisters 16
+POP R3
+BRZ .Scal_Gets_End R2
+.Scal_Gets_Loop
+IN R1 %TEXT
+BRE .Scal_Gets_End R1 R6
+LOD R7 .OSVar_ECHO
+BRZ ~+2 R7
+OUT %TEXT R1
+STR R3 R1
+INC R3 R3
+DEC R2 R2
+BNZ .Scal_Gets_Loop R2
+.Scal_Gets_End
+RET
+
 .Scal_Getc //TODO: make non blocking
 ADD R3 R3 .VirtualRegisters
 IN R1 %TEXT
@@ -743,4 +773,3 @@ CAL R6
 INC R4 R4
 STR .VirtualRegisters R0 //keep R0 as 0
 JMP .Exec_Loop
-
