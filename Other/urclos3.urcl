@@ -18,7 +18,9 @@
 BITS >= 16
 MINREG 8
 MINHEAP 1024
-MINSTACK 6
+MINSTACK 10
+
+@DEBUG ONWRITE .test
 
 .Initialize
 OUT %ADDR 11 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
@@ -60,6 +62,7 @@ DW .Ins_StoreMemory // 11
 DW .Ins_Push // 12
 DW .Ins_Pop // 13
 DW .Ins_BulkImmediate //14
+.test
 DW .Ins_SystemCall //15
 
 .SystemCalls
@@ -120,14 +123,12 @@ DW @BITS
 DW M0
 .OSVar_MALLOCSADDR
 DW M0
-.OSVar_SEEKOFFSET
-DW 0
 .OSVar_USERNAME
 DW @MAX //configured on startup
 .OSVar_CPP
 DW 0
-.OSVar_LASTEXITCODE
-DW 0
+.OSVar_PROCNAME
+DW 0 //write only
 .OSVar_EXIT
 DW 0
 .OSVar_STARTUPPROG
@@ -441,12 +442,13 @@ DEC R3 R3
 CAL .Scal_Free_SkipGet
 POP R3
 POP R5
-STR .OSVar_LASTEXITCODE R3
+STR .OSVar_EXIT R3
 LLOD R1 R5 -1 //the one before
 BRZ .END R1
 LOD R1 .OSVar_Restricted_CurrentFinalProc
 DEC R1 R1
 STR .OSVar_Restricted_CurrentFinalProc R1
+INC R1 R1
 LOD R2 R1
 STR R5 R2 //puts last into current
 STR R1 0
@@ -475,17 +477,34 @@ LOD R7 .OSVar_Restricted_CurrentFinalProc
 LSTR R7 1 R3
 LOD R6 .OSVar_Restricted_NextPID
 DEC R6 R6
+LOD R1 R5
 STR R3 R6
 INC R3 R3
-LOD R1 R5
 INC R1 R1
-MOV R2 R0
-.Scal_Fork_UpdateLoop
 CPY R3 R1
+INC R3 R3
+STR R3 R0
+INC R3 R3
+STR R3 R4
+INC R3 R3
+ADD R1 R1 3
+CPY R3 R1
+INC R1 R1
+INC R3 R3
+CPY R3 R1
+INC R1 R1
+INC R3 R3
+CPY R3 R1
+INC R3 R3
+MOV R2 R0
+ADD R1 .VirtualRegisters 1
+.Scal_Fork_UpdateLoop
+LOD R8 R1
+STR R3 R8
 INC R3 R3
 INC R1 R1
 INC R2 R2
-BRL .Scal_Fork_UpdateLoop R2 21
+BRL .Scal_Fork_UpdateLoop R2 15
 POP R1
 SUB R3 R3 16
 LSTR R3 R1 R0
@@ -608,7 +627,7 @@ RET
 
 .Scal_Error
 STR .OSVar_ERROR 6
-JMP .Exec_Loop
+RET
 
 .Scal_Lodosvar
 MOV R1 R3
@@ -643,6 +662,7 @@ HLT
 
 .ContextSwitch
 LOD R7 R5
+BRZ .ContextSwitch_LodNextProc R7
 LSTR R7 3 R4
 LOD R8 .OSVar_SEEKOFFSET
 LSTR R7 4 R8
@@ -652,13 +672,12 @@ LSTR R7 6 R8
 ADD R7 R7 7
 ADD R6 .VirtualRegisters 1
 .ContextSwitch_StrRegLoop
-//OUT %NUMB R7
-//OUT %TEXT 0xA
 CPY R7 R6
 INC R6 R6
 INC R7 R7
 BLE .ContextSwitch_StrRegLoop R6 .VirtualRegisters_StackPointer
 //LOD next proc
+.ContextSwitch_LodNextProc
 INC R5 R5
 LOD R7 R5
 BRE .ContextSwitch_Restartprocloop R7 0
@@ -668,13 +687,13 @@ LLOD R8 R7 4
 STR .OSVar_SEEKOFFSET R8
 LLOD R8 R7 6
 STR .OSVar_ERROR R8
-//LOD Regs
 ADD R7 R7 7
 ADD R6 .VirtualRegisters 1
 .ContextSwitch_LodRegLoop
 CPY R6 R7
 INC R6 R6
 INC R8 R8
+INC R7 R7
 BLE .ContextSwitch_LodRegLoop R6 .VirtualRegisters_StackPointer
 RET
 
@@ -724,3 +743,4 @@ CAL R6
 INC R4 R4
 STR .VirtualRegisters R0 //keep R0 as 0
 JMP .Exec_Loop
+
