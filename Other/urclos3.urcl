@@ -60,7 +60,6 @@ DW .Ins_StoreMemory // 11
 DW .Ins_Push // 12
 DW .Ins_Pop // 13
 DW .Ins_BulkImmediate //14
-.test
 DW .Ins_SystemCall //15
 
 .SystemCalls
@@ -77,7 +76,7 @@ DW .Scal_Error //.Scal_Stat //9
 DW .Scal_Exec //10
 DW .Scal_Fork //11
 DW .Scal_GetPID //12
- DW .Scal_Error//DW .Scal_WaitPID //13
+DW .Scal_WaitPID //13
  DW .Scal_Error//DW .Scal_Kill //14
 DW .Scal_Chdir // //15
 DW .Scal_Error //.Scal_Stime //16
@@ -99,7 +98,7 @@ DW .Scal_Error //.Scal_Strcpy //31
 DW .Scal_Error //.Scal_Strlen //32
 DW .Scal_Lodosvar //33
 DW .Scal_Strosvar //34
- DW .Scal_Error//DW .Scal_Getdirname //35
+DW .Scal_Getdirname //35
  DW .Scal_Error//DW .Scal_NthString //36
 
 //OSVariables:
@@ -521,6 +520,19 @@ LOD R1 R5
 CPY R3 R1 //haha I use that 1 cisc instruction noob
 RET
 
+.Scal_WaitPID
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+IMM R2 .ProcessDescriptors
+.Scal_WaitPID_CheckForPIDLoop
+LOD R1 R2
+BRZ .Ins_Nop R1
+LOD R1 R1
+INC R2 R2
+BNE .Scal_WaitPID_CheckForPIDLoop R1 R3
+DEC R4 R4 //if process exists dont move onto next process
+RET
+
 .Scal_Chdir
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3
@@ -673,6 +685,42 @@ LLOD R3 .OSVar_CWD R3
 CAL .Ins_Push
 RET
 
+.Scal_Getdirname
+PSH R3
+IMM R3 16
+CAL .Ins_Pop
+LLOD R2 .VirtualRegisters 16 //max length
+POP R3
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+BRZ .Ins_Nop R2
+LOD R1 .OSVar_CWD
+ADD R6 R1 3
+OUT %ADDR R6
+IN R6 %BUS
+OUT %ADDR R1
+IN R1 %BUS
+AND R7 R1 0xFF
+STR R3 R7
+INC R3 R3
+DEC R2 R2
+BSR R1 R1 8
+BRZ .Ins_Nop R1
+SUB R6 R6 R1 //start of name
+.Scal_Getdirname_Loop
+BRZ .Ins_Nop R2
+OUT %ADDR R6
+IN R8 %BUS
+STR R3 R8
+DEC R2 R2
+DEC R1 R1
+INC R6 R6
+INC R3 R3
+BRZ .Ins_Nop R1
+BRZ .Ins_Nop R2
+JMP .Scal_Getdirname_Loop
+.Scal_Getdirname_End
+RET
 //HELPER FUNCTIONS
 .PrintString //r1 = string address
 LOD R2 R1
