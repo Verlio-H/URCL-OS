@@ -56,20 +56,20 @@ PSH R2
 SCAL GETDIRNAME R1 //gets dir with cap of 32 long
 SCAL PUTS R1 //prints it lol
 SCAL FREE R1
-SCAL PUTCI
 SCAL PUTCI '$'
 SCAL PUTCI ' '
 IMM R1 64
 SCAL MALLOC R1
-SCAL LODOSVAR 12
+SCAL LODOSVAR ERROR
 POP R5
 BGE R4 R5 R6
+IMM R2 0xA
+PSH R2
 PSH R1
 SCAL GETS R1 //stores string into mem[R1] with limit of 64 length
 SCAL LODOSVAR PATH //get bin location
-POP R2
-ADD R1 R2 R0
 SCAL RDIR R1 //returns the location of the requested file
+PSH R1
 SCAL LODOSVAR ERROR
 POP R5
 BGE R4 R5 R6
@@ -81,18 +81,22 @@ SCAL LODOSVAR EXIT
 POP R1
 IMM R2 0xFFFE
 IMM R4 .Shell_Start
-BRE R4 R2 R1 //continue if exit code wasn't -1
+BGE R4 R2 R1 //continue if exit code wasn't -1
 SCAL EXIT R0
 .Shell_Exec
+SCAL PUTCI '\n'
+POP R1
 SCAL EXEC R1
 
 .Shell_Error
-IMM R1 7
+IMM R1 8
 SCAL MALLOC R1
 BIMM R1 ["Error\n" 0]
 SCAL PUTS R1
 SCAL FREE R1
-SCAL EXIT R6 //exit code 1
+PSH R0
+SCAL STROSVAR ERROR
+BGE R0 R0 R0 //jmp to start
 
 //cd: (/bin/cd)
 IMM R4 0x20
@@ -236,5 +240,3 @@ SCAL PUTS R1
 SCAL PUTCI '\n'
 SCAL FREE R1
 SCAL EXIT R0
-
-//mkdir: (/bin/mkdir) (this is kind of questionable) (touch is basically the same)
