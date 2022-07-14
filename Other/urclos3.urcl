@@ -46,8 +46,14 @@ DEC R5 @MINHEAP
 LSTR M0 R5 -1
 JMP .CreateStartingProc
 
-.Initialize_VerySpecificAmountOfMemory
-STR M
+.Initialize_NoBoot
+OUT %TEXT 'E'
+OUT %TEXT 'r'
+OUT %TEXT 'r'
+OUT %TEXT 'o'
+OUT %TEXT 'r'
+RET
+
 .InstructionTable
 DW .Ins_Nop
 DW .Ins_Immediate // 1
@@ -103,7 +109,7 @@ DW .Scal_Error //.Scal_Strlen //32
 DW .Scal_Lodosvar //33
 DW .Scal_Strosvar //34
 DW .Scal_Getdirname //35
- DW .Scal_Error//DW .Scal_NthString //36
+DW .Scal_NthString //36
 
 //OSVariables:
 .OSVar_CWD
@@ -570,7 +576,7 @@ JMP .Scal_Rdir_Start
 
 .Scal_Rdir_UseDefault
 MOV R2 R6
-
+BRE .Scal_Rdir_UseCWD R2 @MAX
 .Scal_Rdir_Start
 LOD R1 R3
 INC R3 R3
@@ -781,10 +787,6 @@ IN R1 %TEXT
 STR R3 R1
 RET
 
-.Scal_Error
-STR .OSVar_ERROR 6
-RET
-
 .Scal_Lodosvar
 LLOD R3 .OSVar_CWD R3
 LSTR .VirtualRegisters 16 R3
@@ -836,6 +838,40 @@ BRZ .Ins_Nop R2
 JMP .Scal_Getdirname_Loop
 .Scal_Getdirname_End
 RET
+
+.Scal_NthString
+ADD R3 R3 .VirtualRegisters
+PSH R3
+IMM R3 16
+CAL .Ins_Pop
+LLOD R2 .VirtualRegisters 16
+IMM R3 16
+PSH R2
+CAL .Ins_Pop
+POP R2
+LLOD R7 .VirtualRegisters 16
+POP R3
+LOD R1 R3
+BRZ .Scal_NthString_Success R7
+.Scal_NthString_Loop
+LOD R6 R1
+BRZ .Scal_NthString_Error R6
+INC R1 R1
+BNE .Scal_NthString_Loop R6 R7
+DEC R2 R2
+BNZ .Scal_NthString_Loop R2
+.Scal_NthString_Success
+STR R3 R1
+RET
+
+.Scal_NthString_Error
+STR .OSVar_ERROR 9
+RET
+
+.Scal_Error
+STR .OSVar_ERROR 6
+RET
+
 //HELPER FUNCTIONS
 .PrintString //r1 = string address
 LOD R2 R1
