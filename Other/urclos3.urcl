@@ -18,7 +18,7 @@
 BITS >= 16
 MINREG 8
 MINHEAP 1024
-MINSTACK 10
+MINSTACK 16
 
 .Initialize
 OUT %ADDR 11 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
@@ -28,7 +28,7 @@ STR .OSVar_STARTUPPROG R4
 STR .OSVar_MALLOCSADDR M0
 
 .Initialize_Memory
-SUB R5 @MINHEAP 2 //use this on bad emu that no have @HEAP (I am looking at you bram)
+SUB R5 @MINHEAP 2
 BGE .Initialize_ManyMemories R5 @SMAX
 STR M0 R5
 DEC R5 @MINHEAP
@@ -547,7 +547,6 @@ DEC R4 R4 //if process exists dont move onto next word
 RET
 
 .Scal_Chdir
-//@DEBUG
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3
 STR .OSVar_CWD R3
@@ -696,20 +695,22 @@ ADD R1 R1 R3
 SUB R2 R2 R3
 DEC R2 R2
 STR R1 R2
+INC R1 R1
 .Scal_Malloc_Success
 DEC R1 R1
 STR .OSVar_MALLOCSADDR R1
 RET
 
 .Scal_Malloc_Checkformerge
-PSH R1
+MOV R7 R1
 ADD R1 R1 R2
 INC R1 R1
 LOD R6 R1
-POP R1
 BRN .Scal_Malloc_Loop R6
 ADD R2 R2 R6
+INC R2 R2
 BGE .Scal_Malloc_Loop R2 @SMAX //if combined are too big then don't merge
+MOV R1 R7
 STR R1 R2
 JMP .Scal_Malloc_Loop
 
