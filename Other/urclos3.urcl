@@ -467,7 +467,7 @@ INC R1 R1
 LOD R2 R1
 STR R5 R2 //puts last into current
 STR R1 0
-IMM R5 .ProcessDescriptors
+//IMM R5 .ProcessDescriptors
 RET
 
 .Scal_Exec
@@ -489,7 +489,9 @@ LSTR .VirtualRegisters 16 22
 CAL .Scal_Malloc
 LLOD R3 .VirtualRegisters 16
 LOD R7 .OSVar_Restricted_CurrentFinalProc
-LSTR R7 1 R3
+INC R7 R7
+STR .OSVar_Restricted_CurrentFinalProc R7
+STR R7 R3
 LOD R6 .OSVar_Restricted_NextPID
 DEC R6 R6
 LOD R1 R5
@@ -545,6 +547,7 @@ DEC R4 R4 //if process exists dont move onto next word
 RET
 
 .Scal_Chdir
+//@DEBUG
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3
 STR .OSVar_CWD R3
@@ -556,6 +559,8 @@ PSH R3
 IMM R3 16
 CAL .Ins_Pop
 LLOD R6 .VirtualRegisters 16 //R6 = default dir
+BNE ~+2 R6 0xFFFF
+LOD R6 .OSVar_CWD
 LOD R3 SP
 LOD R3 R3
 LOD R1 R3
@@ -580,6 +585,7 @@ BRE .Scal_Rdir_UseCWD R2 @MAX
 .Scal_Rdir_Start
 LOD R1 R3
 INC R3 R3
+BRZ .Scal_Rdir_FullPathInstant R1
 BRE .Scal_Rdir_Start R1 '/'
 DEC R3 R3
 PSH R3
@@ -608,13 +614,13 @@ LOD R1 R3
 SETE R7 R1 R0
 SETE R8 R1 '/'
 OR R7 R7 R8
-SETE R8 R1 ' '
-NOR R7 R7 R8 //if this == -1 then is not end of current dir name
-SETNE R8 R6 R0 //if this == -1 then is not end of search dir name
-XNOR R7 R7 R8 //if this == -1 then there is no match
+SETE R8 R1 0x20 //damn you bram I spent like 15 minutes debugging this until I learned that ' ' was broken
+OR R7 R7 R8 //if this == -1 then is end of current dir name
+SETE R8 R6 R0 //if this == -1 then is end of search dir name
+XNOR R7 R7 R8 //if are not equal then there is no match
 BRZ .Scal_Rdir_Loop R7
 BRZ .Scal_Rdir_FullPathFound R1
-BRE .Scal_Rdir_FullPathFound R1 ' '
+BRE .Scal_Rdir_FullPathFound R1 0x20
 BRE .Scal_Rdir_DirectoryFound R1 '/'
 LOD R7 SP
 OUT %ADDR R7
@@ -644,9 +650,10 @@ JMP .Scal_Rdir_Loop
 DEC R2 R2
 POP R0
 POP R0
-POP R3 //original R3
 OUT %ADDR R2
 IN R2 %BUS
+.Scal_Rdir_FullPathInstant
+POP R3 //original R3
 STR R3 R2
 RET
 
@@ -729,8 +736,8 @@ RET
 .Scal_Free
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3
-.Scal_Free_SkipGet
 DEC R3 R3
+.Scal_Free_SkipGet
 LOD R1 R3
 AND R1 R1 @SMAX
 STR R3 R1
