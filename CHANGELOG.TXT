@@ -32,3 +32,13 @@ New intermediate language
 Terminal upgrades (more to come as well)
 Directories
 New file header format (easier to access information and scales better)
+
+- URCLOS Archaic
+Tuke and Verlio's take at URCL OS
+
+This version has:
+No meme/useless functions and variables
+No Programs installed by default
+No warnings
+Errors is abreviated to E and Files is abreviated to F
+Shell lite
