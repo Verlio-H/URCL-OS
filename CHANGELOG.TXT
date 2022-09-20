@@ -1,0 +1,34 @@
+- URCL OS v3.0.0 (pre release)
+
+Whats new in v3.0.0:
+Rewrite of all systemcalls
+Multithreading
+Memory management
+Slight change in IL
+
+Whats next:
+More system utils
+File fragmentation
+More system calls
+
+- URCL OS v2.3.2
+
+Whats new in v2.3:
+Rewrite of SILK to match Core URCL better, Added OUTCI syscall, Added pwd, and cat
+Whats new in v2.3.1:
+Added RDIR syscall and rewrote programs to use directories instead of indexes
+Whats new in v2.3.2:
+Added FNS syscall
+
+Whats coming next:
+Fragmentation
+Memory allocation
+
+- URCL OS v2
+
+Whats new in v2:
+Rewrite of all functions
+New intermediate language
+Terminal upgrades (more to come as well)
+Directories
+New file header format (easier to access information and scales better)
