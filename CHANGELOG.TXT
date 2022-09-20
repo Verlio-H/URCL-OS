@@ -11,7 +11,7 @@ More system utils
 File fragmentation
 More system calls
 
-- URCL OS v2.3.2
+- URCL OS v2.3.x
 
 Whats new in v2.3:
 Rewrite of SILK to match Core URCL better, Added OUTCI syscall, Added pwd, and cat
