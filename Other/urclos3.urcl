@@ -76,8 +76,8 @@ DW .Ins_SystemCall //15
 DW .Scal_Exit //0
  DW .Scal_Error//DW .Scal_Creat //1
  DW .Scal_Error//DW .Scal_Open //2
- DW .Scal_Error//DW .Scal_Close //3
- DW .Scal_Error//DW .Scal_Read //4
+ DW .Scal_Close //3
+ DW .Scal_Read //4
  DW .Scal_Error//DW .Scal_Write //5
  DW .Scal_Error//DW .Scal_Lseek //6
 DW .Scal_Error //.Scal_Link //7
@@ -153,11 +153,12 @@ DW 0
 //4 = out of memory
 //5 = out of disk space
 //6 = invalid systemcall
-//7 = EOF reached
+//7 = invalid fd
 //8 = invalid pid
 //9 = substring not found
 //10 = stack overflow
 //11 = stack underflow
+//12 = too many open files
 
 .OSVar_Restricted_EndingString
 DW [10 "halting..." 10 0]
@@ -165,6 +166,8 @@ DW [10 "halting..." 10 0]
 DW .ProcessDescriptors
 .OSVar_Restricted_NextPID
 DW 1
+.OSVar_Restricted_AmountRead
+DW 0
 
 .VirtualRegisters
 DW 0 //0
@@ -203,6 +206,7 @@ DW 0
 DW 0
 DW 0
 DW 0
+DW -1
 //below is not file descriptor
 DW 0
 .ProcessDescriptors //pointers to them
@@ -237,6 +241,11 @@ DW 0
 //@MSB = allocated?
 //Rest = length
 
+//File descriptor format:
+//Seek address
+//File header addr
+//Current Segment end
+//Remaining segments
 
 
 
@@ -469,6 +478,70 @@ STR R5 R2 //puts last into current
 STR R1 0
 //IMM R5 .ProcessDescriptors
 RET
+
+.Scal_Close
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+ADD R3 R3 .FileDescriptors
+LOD R1 R3
+BRZ .Scal_Close_Error R1
+LLOD R2 R1 -1
+AND R2 R2 @SMAX
+LSTR R1 -1 R2
+STR R3 R0
+RET
+
+.Scal_Close_Error
+STR .OSVar_ERROR 7
+RET
+
+.Scal_Read
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+PSH R3
+ADD R3 R3 .FileDescriptors
+LOD R1 R3 //fd to read from
+IMM R3 16
+PSH R1
+CAL .Ins_Pop
+POP R1
+LLOD R7 .VirtualRegisters 16 //mem dest location
+IMM R3 16
+PSH R1
+PSH R7
+CAL .Ins_Pop
+POP R7
+POP R1
+LLOD R6 .VirtualRegisters 16 //amount to read
+BRZ .Scal_Close_Error R1
+POP R3
+BGE .Scal_Close_Error R3 16
+LOD R2 R1 //seek addr
+LLOD R3 R1 2
+ADD R8 R2 R6 //new seek address after
+BRG .Scal_Read_NoFullRead R8 R3 //too smol
+STR R1 R8
+MOV R3 R8 //ending address
+STR .OSVar_Restricted_AmountRead R6
+//while (R2 <= R3) {
+.Scal_Read_Loop
+OUT %ADDR R2
+IN R8 %BUS
+STR R7 R8
+INC R7 R7
+INC R2 R2
+BRL .Scal_Read_Loop R2 R3
+LOD R3 .OSVar_Restricted_AmountRead
+LSTR .VirtualRegisters 16 R3
+IMM R3 16
+CAL .Ins_Push
+RET
+
+.Scal_Read_NoFullRead
+STR R1 R3
+SUB R8 R3 R2
+STR .OSVar_Restricted_AmountRead R8
+JMP .Scal_Read_Loop
 
 .Scal_Exec
 ADD R3 R3 .VirtualRegisters
