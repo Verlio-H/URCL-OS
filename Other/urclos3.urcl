@@ -1,7 +1,7 @@
-// THIS IS AN ALPHA AND BUGS WILL BE PRESENT
+// THIS IS A BETA AND BUGS WILL BE PRESENT
 // MANY FEATURES ARE NOT IMPLIMENTED
 
-// URCL OS v3.0.0 (pre release)
+// URCL OS v3.0.0
 
 // Whats new in v3.0.0:
 // Rewrite of all systemcalls
@@ -11,7 +11,7 @@
 
 // Whats next:
 // More system utils
-// File fragmentation
+// More file i/o operations
 // More system calls
 
 //HEADERS
@@ -75,11 +75,11 @@ DW .Ins_SystemCall //15
 .SystemCalls
 DW .Scal_Exit //0
  DW .Scal_Error//DW .Scal_Creat //1
- DW .Scal_Error//DW .Scal_Open //2
+DW .Scal_Open //2
  DW .Scal_Close //3
  DW .Scal_Read //4
  DW .Scal_Error//DW .Scal_Write //5
- DW .Scal_Error//DW .Scal_Lseek //6
+DW .Scal_Lseek //6
 DW .Scal_Error //.Scal_Link //7
 DW .Scal_Error //.Scal_Unlink //8
 DW .Scal_Error //.Scal_Stat //9
@@ -110,6 +110,7 @@ DW .Scal_Lodosvar //33
 DW .Scal_Strosvar //34
 DW .Scal_Getdirname //35
 DW .Scal_NthString //36
+DW .Scal_Flen
 
 //OSVariables:
 .OSVar_CWD
@@ -166,7 +167,7 @@ DW [10 "halting..." 10 0]
 DW .ProcessDescriptors
 .OSVar_Restricted_NextPID
 DW 1
-.OSVar_Restricted_AmountRead
+.OSVar_Restricted_Temp
 DW 0
 
 .VirtualRegisters
@@ -240,6 +241,7 @@ DW 0
 //Memory Block format:
 //@MSB = allocated?
 //Rest = length
+
 
 //File descriptor format:
 //Seek address
@@ -439,7 +441,7 @@ RET
 .Ins_SystemCall
 BSL R2 R2 4
 OR R1 R1 R2
-BRG .Ins_SystemCall_InvalidSyscall R1 36
+BRG .Ins_SystemCall_InvalidSyscall R1 37
 LLOD R1 R1 .SystemCalls
 CAL R1
 CAL .ContextSwitch
@@ -467,7 +469,9 @@ CAL .Scal_Free_SkipGet
 POP R3
 POP R5
 STR .OSVar_EXIT R3
-LLOD R1 R5 -1 //the one before
+DEC R5 R5
+LOD R1 R5 //the one before
+INC R5 R5
 BRZ .END R1
 LOD R1 .OSVar_Restricted_CurrentFinalProc
 DEC R1 R1
@@ -479,15 +483,69 @@ STR R1 0
 //IMM R5 .ProcessDescriptors
 RET
 
+.Scal_Open
+@DEBUG
+PSH R4
+PSH R3
+ADD R3 R3 .VirtualRegisters
+PSH ~+3
+PSH R3
+JMP .Scal_Rdir_SkipSetup
+//find next fd
+IMM R1 .FileDescriptors
+.Scal_Open_Loop
+LOD R2 R1
+INC R1 R1
+BNZ .Scal_Open_Loop R2
+BRE .Scal_Open_Error R2 -1
+DEC R1 R1
+POP R3
+ADD R3 R3 .VirtualRegisters
+SUB R2 R1 .FileDescriptors
+STR R3 R2
+IMM R3 16
+LSTR .VirtualRegisters 16 4
+PSH R1
+CAL .Scal_Malloc
+POP R1
+LLOD R4 .VirtualRegisters 16
+STR R1 R4
+MOV R1 R4
+LOD R3 .OSVar_Restricted_Temp
+OUT %ADDR R3
+IN R4 %BUS //location
+STR R1 R4
+SUB R3 R3 3 //start of file header
+LSTR R1 1 R3
+INC R3 R3
+OUT %ADDR R3
+IN R2 %BUS
+BSR R2 R2 2 //number of remaining segments
+LSTR R1 3 R2
+INC R3 R3
+OUT %ADDR R3
+IN R2 %BUS //size of file
+ADD R2 R2 R4
+DEC R2 R2
+LSTR R1 2 R2
+POP R4
+RET
+
+.Scal_Open_Error
+STR .OSVar_ERROR 12
+RET
+
 .Scal_Close
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3
 ADD R3 R3 .FileDescriptors
 LOD R1 R3
 BRZ .Scal_Close_Error R1
-LLOD R2 R1 -1
+DEC R1 R1
+LOD R2 R1
 AND R2 R2 @SMAX
-LSTR R1 -1 R2
+STR R1 R2
+INC R1 R1
 STR R3 R0
 RET
 
@@ -496,6 +554,7 @@ STR .OSVar_ERROR 7
 RET
 
 .Scal_Read
+@DEBUG
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3
 PSH R3
@@ -522,7 +581,7 @@ ADD R8 R2 R6 //new seek address after
 BRG .Scal_Read_NoFullRead R8 R3 //too smol
 STR R1 R8
 MOV R3 R8 //ending address
-STR .OSVar_Restricted_AmountRead R6
+STR .OSVar_Restricted_Temp R6
 //while (R2 <= R3) {
 .Scal_Read_Loop
 OUT %ADDR R2
@@ -531,7 +590,7 @@ STR R7 R8
 INC R7 R7
 INC R2 R2
 BRL .Scal_Read_Loop R2 R3
-LOD R3 .OSVar_Restricted_AmountRead
+LOD R3 .OSVar_Restricted_Temp
 LSTR .VirtualRegisters 16 R3
 IMM R3 16
 CAL .Ins_Push
@@ -540,8 +599,24 @@ RET
 .Scal_Read_NoFullRead
 STR R1 R3
 SUB R8 R3 R2
-STR .OSVar_Restricted_AmountRead R8
+STR .OSVar_Restricted_Temp R8
 JMP .Scal_Read_Loop
+
+.Scal_Lseek
+@DEBUG
+PSH R3
+IMM R3 16
+CAL .Ins_Pop
+LLOD R1 .VirtualRegisters 16 //file
+ADD R1 R1 .FileDescriptors
+LOD R1 R1
+LLOD R2 R1 1
+POP R3
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+ADD R2 R2 R3
+STR R1 R2
+RET
 
 .Scal_Exec
 ADD R3 R3 .VirtualRegisters
@@ -632,6 +707,7 @@ IMM R3 16
 CAL .Ins_Pop
 LLOD R6 .VirtualRegisters 16 //R6 = default dir
 BNE ~+2 R6 0xFFFF
+.Scal_Rdir_SkipSetup
 LOD R6 .OSVar_CWD
 LOD R3 SP
 LOD R3 R3
@@ -653,8 +729,10 @@ JMP .Scal_Rdir_Start
 
 .Scal_Rdir_UseDefault
 MOV R2 R6
-BRE .Scal_Rdir_UseCWD R2 @MAX
 .Scal_Rdir_Start
+ADD R2 R2 3
+STR .OSVar_Restricted_Temp R2
+SUB R2 R2 3
 LOD R1 R3
 INC R3 R3
 BRZ .Scal_Rdir_FullPathInstant R1
@@ -678,6 +756,7 @@ POP R0
 BSR R6 R6 8
 DEC R7 R2
 OUT %ADDR R7
+STR .OSVar_Restricted_Temp R7
 IN R7 %BUS
 SUB R7 R7 R6
 PSH R7
@@ -921,6 +1000,7 @@ JMP .Scal_Getdirname_Loop
 RET
 
 .Scal_NthString
+@DEBUG
 ADD R3 R3 .VirtualRegisters
 PSH R3
 IMM R3 16
@@ -947,6 +1027,21 @@ RET
 
 .Scal_NthString_Error
 STR .OSVar_ERROR 9
+RET
+
+.Scal_Flen
+ADD R3 R3 .VirtualRegisters //me when pointer to a pointer to a pointer to a pointer
+LOD R3 R3
+ADD R3 R3 .FileDescriptors
+LOD R3 R3
+BRZ .Scal_Close_Error R3
+LLOD R3 R3 1
+ADD R3 R3 2
+OUT %ADDR R3
+IN R3 %BUS
+LSTR .VirtualRegisters 16 R3
+IMM R3 16
+CAL .Ins_Push
 RET
 
 .Scal_Error
