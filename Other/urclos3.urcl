@@ -21,7 +21,7 @@ MINHEAP 1024
 MINSTACK 16
 
 .Initialize
-OUT %ADDR 11 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
+OUT %ADDR 7 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
 IN R4 %BUS
 BRZ .Initialize_NoBoot R4
 STR .OSVar_STARTUPPROG R4
@@ -484,7 +484,6 @@ STR R1 0
 RET
 
 .Scal_Open
-@DEBUG
 PSH R4
 PSH R3
 ADD R3 R3 .VirtualRegisters
@@ -554,7 +553,6 @@ STR .OSVar_ERROR 7
 RET
 
 .Scal_Read
-@DEBUG
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3
 PSH R3
@@ -603,7 +601,6 @@ STR .OSVar_Restricted_Temp R8
 JMP .Scal_Read_Loop
 
 .Scal_Lseek
-@DEBUG
 PSH R3
 IMM R3 16
 CAL .Ins_Pop
@@ -980,6 +977,7 @@ IN R1 %BUS
 AND R7 R1 0xFF
 STR R3 R7
 INC R3 R3
+STR R3 0
 DEC R2 R2
 BSR R1 R1 8
 BRZ .Ins_Nop R1
@@ -993,6 +991,7 @@ DEC R2 R2
 DEC R1 R1
 INC R6 R6
 INC R3 R3
+STR R3 0
 BRZ .Ins_Nop R1
 BRZ .Ins_Nop R2
 JMP .Scal_Getdirname_Loop
@@ -1000,7 +999,6 @@ JMP .Scal_Getdirname_Loop
 RET
 
 .Scal_NthString
-@DEBUG
 ADD R3 R3 .VirtualRegisters
 PSH R3
 IMM R3 16
@@ -1117,7 +1115,7 @@ LLOD R3 .VirtualRegisters 16
 STR .ProcessDescriptors R3
 STR R3 R0 //set PID to 0
 LSTR R3 1 R4
-OUT %ADDR 10
+OUT %ADDR 6
 IN R5 %BUS
 ADD R5 R4 R5
 LSTR R3 2 R5
@@ -1136,6 +1134,7 @@ IMM R5 .ProcessDescriptors
 .Exec_Loop
 OUT %ADDR R4
 IN R6 %BUS
+//@DEBUG
 BSR R3 R6 12
 BSR R2 R6 8
 BSR R1 R6 4
