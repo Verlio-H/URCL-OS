@@ -8,16 +8,16 @@
 // Multithreading
 // Memory management
 // Slight change in IL
+// Proper FS interaction
 
 // Whats next:
 // More system utils
-// More file i/o operations
 // More system calls
 
 //HEADERS
 BITS >= 16
 MINREG 8
-MINHEAP 1024
+MINHEAP 4096
 MINSTACK 16
 
 .Initialize
@@ -76,9 +76,9 @@ DW .Ins_SystemCall //15
 DW .Scal_Exit //0
  DW .Scal_Error//DW .Scal_Creat //1
 DW .Scal_Open //2
- DW .Scal_Close //3
- DW .Scal_Read //4
- DW .Scal_Error//DW .Scal_Write //5
+DW .Scal_Close //3
+DW .Scal_Read //4
+DW .Scal_Write //5
 DW .Scal_Lseek //6
 DW .Scal_Error //.Scal_Link //7
 DW .Scal_Error //.Scal_Unlink //8
@@ -240,7 +240,6 @@ DW 0
 //Memory Block format:
 //@MSB = allocated?
 //Rest = length
-
 
 //File descriptor format:
 //Seek address
@@ -522,7 +521,7 @@ BSR R2 R2 2 //number of remaining segments
 LSTR R1 3 R2
 INC R3 R3
 OUT %ADDR R3
-IN R2 %BUS //size of file
+IN R2 %BUS //size of segment
 ADD R2 R2 R4
 DEC R2 R2
 LSTR R1 2 R2
@@ -572,8 +571,12 @@ LLOD R6 .VirtualRegisters 16 //amount to read
 BRZ .Scal_Close_Error R1
 POP R3
 BGE .Scal_Close_Error R3 16
+.Scal_Read_Big_Loop
 LOD R2 R1 //seek addr
-LLOD R3 R1 2
+LLOD R3 R1 2 //segment end
+LLOD R8 R1 3 //segments remaining?
+BRZ ~+2 R8
+DEC R3 R3
 ADD R8 R2 R6 //new seek address after
 BRG .Scal_Read_NoFullRead R8 R3 //too smol
 STR .OSVar_SEEKOFFSET R8
@@ -589,6 +592,8 @@ INC R7 R7
 INC R2 R2
 BRL .Scal_Read_Loop R2 R3
 LOD R3 .OSVar_Restricted_Temp
+BNE .Scal_Read_NextSegment R3 R6
+.Scal_Read_End
 LSTR .VirtualRegisters 16 R3
 IMM R3 16
 CAL .Ins_Push
@@ -600,6 +605,90 @@ STR R1 R3
 SUB R8 R3 R2
 STR .OSVar_Restricted_Temp R8
 JMP .Scal_Read_Loop
+
+.Scal_Read_NextSegment
+LLOD R8 R1 3
+BRZ .Scal_Read_End R8
+SUB R6 R6 R3 //remaining
+STR .OSVar_Restricted_Temp R6
+OUT %ADDR R2
+IN R2 %BUS //new header
+INC R2 R2
+OUT %ADDR R2
+IN R8 %BUS
+BSR R8 R8 2
+LSTR R1 3 R8 //remaining segment
+INC R2 R2
+OUT %ADDR R2
+IN R8 %BUS //segment length
+INC R2 R2
+OUT %ADDR R2
+IN R3 %BUS //segment start
+STR R1 R3 //new seek
+ADD R3 R3 R8
+DEC R3 R3
+LSTR R1 2 R3
+JMP .Scal_Read_Big_Loop
+
+.Scal_Write
+PSH R4
+//LOD DST
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3
+ADD R3 R3 .FileDescriptors
+LOD R1 R3 //fd to read from
+//LOD SRC
+IMM R3 16
+PSH R1
+CAL .Ins_Pop
+POP R1
+LLOD R2 .VirtualRegisters 16
+//LOD AMOUNT
+IMM R3 16
+PSH R1
+PSH R2
+CAL .Ins_Pop
+POP R2
+POP R1
+LLOD R3 .VirtualRegisters 16
+//PTR = DST.START
+LLOD R4 R1 1
+ADD R7 R4 3
+OUT %ADDR R7
+IN R4 %BUS
+//IF LSEEK + AMOUNT >= PTR + DST.LEN THEN1
+LOD R6 R1 //lseek
+ADD R6 R6 R3
+DEC R7 R7
+OUT %ADDR R7
+IN R7 %BUS
+ADD R7 R4 R7
+BRL .Scal_Write_NoFrag R6 R7
+//  AMOUNT = DST.END - LSEEK
+HLT
+//  CREATFRAG = TRUE
+.Scal_Write_NoFrag
+//PTR = LSEEK
+//WHILE PTR < LSEEK + AMOUNT
+LOD R4 R1
+ADD R7 R4 R3
+.Scal_Write_Loop
+//  CPY PTR SRC
+OUT %ADDR R4
+LOD R6 R2
+OUT %BUS R6
+//  INC SRC SRC
+INC R2 R2
+//  INC PTR PTR
+INC R4 R4
+BRL .Scal_Write_Loop R4 R7
+//LSEEK = PTR
+STR R1 R4
+//IF CREATFRAG
+//  THROW ERROR BECAUSE I HAVEN'T IMPLEMENTED
+//  
+POP R4
+RET
 
 .Scal_Lseek
 PSH R3
@@ -966,6 +1055,7 @@ PSH R3
 IMM R3 16
 CAL .Ins_Pop
 LLOD R2 .VirtualRegisters 16 //max length
+DEC R2 R2
 POP R3
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3
@@ -1034,12 +1124,31 @@ ADD R3 R3 .VirtualRegisters //me when pointer to a pointer to a pointer to a poi
 LOD R3 R3
 ADD R3 R3 .FileDescriptors
 LOD R3 R3
-BRZ .Scal_Close_Error R3
+BRZ .Scal_Close_Error R3 //no open file
 LLOD R3 R3 1
 ADD R3 R3 2
+IMM R8 0
+.Scal_Flen_Loop
 OUT %ADDR R3
-IN R3 %BUS
-LSTR .VirtualRegisters 16 R3
+IN R6 %BUS //segment len
+ADD R8 R8 R6
+DEC R3 R3
+OUT %ADDR R3
+IN R7 %BUS
+BSR R7 R7 2 //remaining segments
+BRZ .Scal_Flen_End R7
+DEC R8 R8
+DEC R6 R6
+ADD R3 R3 2
+OUT %ADDR R3
+IN R7 %BUS //start of segment
+ADD R7 R7 R6
+OUT %ADDR R7
+IN R6 %BUS //next segment header address
+ADD R3 R6 2
+JMP .Scal_Flen_Loop
+.Scal_Flen_End
+LSTR .VirtualRegisters 16 R8
 IMM R3 16
 CAL .Ins_Push
 RET
