@@ -74,7 +74,7 @@ DW .Ins_SystemCall //15
 
 .SystemCalls
 DW .Scal_Exit //0
- DW .Scal_Error//DW .Scal_Creat //1
+DW .Scal_Creat //1
 DW .Scal_Open //2
 DW .Scal_Close //3
 DW .Scal_Read //4
@@ -167,6 +167,8 @@ DW .ProcessDescriptors
 .OSVar_Restricted_NextPID
 DW 1
 .OSVar_Restricted_Temp
+DW 0
+.OSVar_Restricted_Temp2
 DW 0
 
 .VirtualRegisters
@@ -481,6 +483,155 @@ STR R1 0
 //IMM R5 .ProcessDescriptors
 RET
 
+.Scal_Creat
+ADD R3 R3 .VirtualRegisters
+LOD R3 R3 //pointer to name string
+//get length
+IMM R1 -2
+PSH R3
+.Scal_Creat_NameLoop
+LOD R2 R3
+INC R3 R3
+INC R1 R1
+BNZ .Scal_Creat_NameLoop R2
+BRP ~+2 R1
+MOV R1 R0 //in case someone trys to name a file "\0"
+ADD R3 R1 68
+PSH R4
+CAL .FindNextSpace
+MOV R3 R4
+POP R4
+ADD R3 R3 3
+OUT %ADDR R3
+IN R6 %BUS
+ADD R6 R6 R1
+OUT %BUS R6 //
+STR .OSVar_Restricted_Temp R6
+DEC R3 R3
+OUT %ADDR R3
+OUT %BUS 64 //
+DEC R3 R3
+OUT %ADDR R3
+OUT %BUS 0 //
+DEC R3 R3
+POP R6
+BSL R7 R1 8
+LOD R8 R6
+ADD R7 R7 R8
+OUT %ADDR R3
+OUT %BUS R7 //
+STR .OSVar_Restricted_Temp2 R7
+ADD R3 R3 4
+INC R6 R6
+.Scal_Creat_SetNameLoop
+BRZ .Scal_Creat_SetNameLoop_End R1
+LOD R8 R6
+OUT %ADDR R3
+OUT %BUS R8
+INC R6 R6
+INC R3 R3
+DEC R1 R1
+JMP .Scal_Creat_SetNameLoop
+.Scal_Creat_SetNameLoop_End
+//expand CWD and insert
+IMM R7 0
+LOD R3 .OSVar_CWD
+.Scal_Creat_UpdateDirLoop
+//follow chain to find final block
+INC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+//  check for remaining block header bit
+BSR R6 R6 2
+//      false -> end loop
+BRZ .Scal_Creat_UpdateDirLoop_End R6
+//      true -> go to end and get next header
+INC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+INC R3 R3
+OUT %ADDR R3
+IN R7 %BUS
+ADD R6 R6 R7
+DEC R6 R6
+OUT %ADDR R6
+IN R3 %BUS
+INC R7 R7
+JMP .Scal_Creat_UpdateDirLoop
+.Scal_Creat_UpdateDirLoop_End
+//set header in final block to mark it as not being final
+IN R6 %BUS
+OR R6 R6 4
+OUT %BUS R6
+BNZ .Scal_Creat_NotFirst R7
+BRE .Scal_Creat_NotFirst R3 1
+//  if block is first and addr != 0, subtract dir name length from addr (can be found from first thing in header)
+DEC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+BSR R6 R6 8
+SUB R3 R3 R6
+SUB R3 R3 3
+OUT %ADDR R3
+IN R6 %BUS
+OR R6 R6 4
+OUT %BUS R6
+.Scal_Creat_NotFirst 
+//FNS(9)
+PSH R3
+IMM R3 9
+PSH R4
+CAL .FindNextSpace
+MOV R8 R4
+POP R4
+POP R3
+//end of block = header
+ADD R3 R3 2 //points to starting addr
+OUT %ADDR R3
+IN R6 %BUS
+DEC R3 R3
+OUT %ADDR R3
+IN R7 %BUS
+ADD R6 R6 R7
+DEC R6 R6 //last word
+OUT %ADDR R6
+OUT %BUS R8
+//header[0] = '.'
+OUT %ADDR R8
+OUT %BUS '.'
+//header[1] = 0
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 0
+//header[2] = 5
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 5
+//header[3] = header+4
+INC R8 R8
+OUT %ADDR R8
+INC R8 R8
+OUT %BUS R8
+//header[4,5,6,7] = stuff from earlier
+OUT %ADDR R8
+LOD R6 .OSVar_Restricted_Temp2
+OUT %BUS R6
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 0
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 64
+INC R8 R8
+OUT %ADDR R8
+LOD R6 .OSVar_Restricted_Temp
+OUT %BUS R6
+//header[8] = 0
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 0
+RET
+
 .Scal_Open
 PSH R4
 PSH R3
@@ -601,11 +752,13 @@ RET
 
 .Scal_Read_NoFullRead
 STR R7 0
+INC R3 R3
 STR R1 R3
+STR .OSVar_SEEKOFFSET R3
 SUB R8 R3 R2
 STR .OSVar_Restricted_Temp R8
-JMP .Scal_Read_Loop
-
+BNZ .Scal_Read_Loop R8
+ADD R6 R6 R3
 .Scal_Read_NextSegment
 LLOD R8 R1 3
 BRZ .Scal_Read_End R8
@@ -1170,6 +1323,113 @@ RET
 .END //final graceful exit routine
 IMM R1 .OSVar_Restricted_EndingString
 CAL .PrintString
+HLT
+
+.FindNextSpace
+//R3 = amount of space
+//TODO: count FFFFs to avoid eventual death
+//TODO: merge blocks
+//R4 = current address
+//R6, R7, R8 = temp
+IMM R4 0
+IMM R8 0
+.FNS_Loop
+OUT %ADDR R4
+IN R6 %BUS
+BRZ .FNS_CheckBlock R6
+BNE .FNS_Allocated R6 0xFFFF
+INC R4 R4
+JMP .FNS_Loop
+.FNS_Allocated
+IMM R8 0
+//get next block location
+ADD R4 R4 2
+OUT %ADDR R4
+IN R6 %BUS
+INC R4 R4
+OUT %ADDR R4
+IN R4 %BUS
+ADD R4 R4 R6
+JMP .FNS_Loop
+.FNS_CheckBlock
+ADD R4 R4 2
+OUT %ADDR R4
+IN R6 %BUS
+BRE .FNS_Error R6 0xFFFF
+BNZ .FNS_Merge R8
+.FNS_Merge_Ret
+ADD R7 R6 4 //total size
+BGE .FNS_Allocate R7 R3
+//not big enough
+SUB R8 R4 2 //update thingy
+INC R4 R4
+OUT %ADDR R4
+IN R4 %BUS
+ADD R4 R4 R6
+JMP .FNS_Loop
+.FNS_Allocate
+SUB R7 R7 R3 //extra space that exists
+SUB R4 R4 2
+PSH R4
+ADD R4 R4 R3 //start of additional block
+BGE .FNS_Allocate_BigBlock R7 4
+BRZ .FNS_Allocate_EmptyBlock R7
+OUT %ADDR R4
+OUT %BUS 0xFFFF
+INC R4 R4
+DEC R7 R7
+BNZ ~-4 R7
+.FNS_Allocate_EmptyBlock
+POP R4
+PSH R4
+ADD R4 R4 4
+SUB R3 R3 4
+BRZ .FNS_Allocate_End R3
+OUT %ADDR R4
+OUT %BUS 0
+INC R4 R4
+DEC R3 R3
+BNZ ~-4 R3
+.FNS_Allocate_End
+POP R4
+RET
+
+.FNS_Allocate_BigBlock
+SUB R7 R7 4
+OUT %ADDR R4
+OUT %BUS 0
+INC R4 R4
+OUT %ADDR R4
+OUT %BUS 0
+INC R4 R4
+OUT %ADDR R4
+OUT %BUS R7
+INC R4 R4
+OUT %ADDR R4
+INC R4 R4
+OUT %BUS R4
+JMP .FNS_Allocate_EmptyBlock
+.FNS_Merge
+//R8 block + R4 block
+//R4.len + R4.pos-R8.pos
+OUT %ADDR R4
+IN R6 %BUS
+INC R4 R4
+OUT %ADDR R4
+IN R7 %BUS
+ADD R6 R6 R7
+ADD R4 R8 3
+OUT %ADDR R4
+IN R7 %BUS
+SUB R6 R6 R7
+INC R6 R6
+DEC R4 R4
+OUT %ADDR R4
+OUT %BUS R6
+JMP .FNS_Merge_Ret
+.FNS_Error
+//this is very bad
+//TODO: add some actual stuff here
 HLT
 
 //EXECUTIONSTUFF
