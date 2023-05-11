@@ -1219,7 +1219,7 @@ STR R3 R1
 RET
 
 .Scal_Strlen
-ADD R8 R3 .VirtauLRegisters
+ADD R8 R3 .VirtualRegisters
 LOD R3 R8
 IMM R1 -1
 .Scal_Strlen_Loop
