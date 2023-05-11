@@ -971,9 +971,17 @@ JMP .Scal_Rdir_Start
 .Scal_Rdir_UseDefault
 MOV R2 R6
 .Scal_Rdir_Start
+STR .OSVar_Restricted_Temp2 R4
 ADD R2 R2 3
 STR .OSVar_Restricted_Temp R2
-SUB R2 R2 3
+OUT %ADDR R2
+IN R1 %BUS //dir start
+DEC R2 R2
+OUT %ADDR R2
+IN R4 %BUS
+ADD R4 R4 R1
+DEC R4 R4
+SUB R2 R2 2
 LOD R1 R3
 INC R3 R3
 BRZ .Scal_Rdir_FullPathInstant R1
@@ -988,6 +996,7 @@ LOD R1 R3
 OUT %ADDR R2
 IN R6 %BUS
 BRZ .Scal_Rdir_BadDir R6
+BRE .Scal_Rdir_NextSeg R2 R4
 ADD R2 R2 4
 AND R7 R6 0xFF
 PSH R0
@@ -995,10 +1004,10 @@ BNE .Scal_Rdir_Loop R7 R1
 INC R3 R3
 POP R0
 BSR R6 R6 8
-DEC R7 R2
-OUT %ADDR R7
-STR .OSVar_Restricted_Temp R7
-IN R7 %BUS
+DEC R1 R2
+OUT %ADDR R1
+STR .OSVar_Restricted_Temp R1
+IN R7 %BUS //file addr
 SUB R7 R7 R6
 PSH R7
 .Scal_Rdir_CheckDirLoop
@@ -1025,13 +1034,32 @@ INC R3 R3
 DEC R6 R6
 JMP .Scal_Rdir_CheckDirLoop
 
+.Scal_Rdir_NextSeg
+MOV R2 R6
+ADD R2 R2 2
+OUT %ADDR R2
+IN R3 %BUS
+INC R2 R2
+OUT %ADDR R2
+IN R4 %BUS
+ADD R4 R4 R3
+DEC R4 R4
+INC R2 R2
+PSH R0
+JMP .Scal_Rdir_Loop
+
 .Scal_Rdir_DirectoryFound
 INC R3 R3
 LOD R1 R3
 BRZ .Scal_Rdir_FullPathFound R1 //if ends with a / because yeah people do that sometimes
-DEC R2 R2
-OUT %ADDR R2
+DEC R4 R2
+OUT %ADDR R4
 IN R2 %BUS
+DEC R4 R4
+OUT %ADDR R4
+IN R4 %BUS
+ADD R4 R4 R2
+DEC R4 R4
 POP R0
 POP R0
 PSH R3
@@ -1047,12 +1075,14 @@ IN R2 %BUS
 .Scal_Rdir_FullPathInstant
 POP R3 //original R3
 STR R3 R2
+LOD R4 .OSVar_Restricted_Temp2
 RET
 
 .Scal_Rdir_BadDir
 STR .OSVar_ERROR 2
 POP R0
 POP R0
+LOD R4 .OSVar_Restricted_Temp2
 RET
 
 .Scal_Malloc
@@ -1259,8 +1289,8 @@ LOD R1 R3
 BRZ .Scal_NthString_Success R7
 .Scal_NthString_Loop
 LOD R6 R1
-BRZ .Scal_NthString_Error R6
 INC R1 R1
+BRZ .Scal_NthString_Error R6
 BNE .Scal_NthString_Loop R6 R7
 DEC R2 R2
 BNZ .Scal_NthString_Loop R2
@@ -1269,6 +1299,7 @@ STR R3 R1
 RET
 
 .Scal_NthString_Error
+BRZ .Scal_NthString_Success R7
 STR .OSVar_ERROR 9
 RET
 
