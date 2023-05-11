@@ -105,7 +105,7 @@ DW .Scal_Error //.Scal_Memcpy //28
 DW .Scal_Error //.Scal_Rand //29
 DW .Scal_Error //.Scal_Strcmp //30
 DW .Scal_Error //.Scal_Strcpy //31
-DW .Scal_Error //.Scal_Strlen //32
+DW .Scal_Strlen //32
 DW .Scal_Lodosvar //33
 DW .Scal_Strosvar //34
 DW .Scal_Getdirname //35
@@ -1216,6 +1216,18 @@ RET
 ADD R3 R3 .VirtualRegisters
 IN R1 %TEXT
 STR R3 R1
+RET
+
+.Scal_Strlen
+ADD R8 R3 .VirtauLRegisters
+LOD R3 R8
+IMM R1 -1
+.Scal_Strlen_Loop
+LOD R7 R3
+INC R3 R3
+INC R1 R1
+BNZ .Scal_Strlen_Loop R7
+STR R8 R1
 RET
 
 .Scal_Lodosvar
