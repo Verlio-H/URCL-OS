@@ -1,5 +1,4 @@
 // THIS IS A BETA AND BUGS WILL BE PRESENT
-// MANY FEATURES ARE NOT IMPLIMENTED
 
 // URCL OS v3.0.0
 
@@ -13,6 +12,7 @@
 // Whats next:
 // More system utils
 // More system calls
+// Reorganization and optimization
 
 //HEADERS
 BITS >= 16
