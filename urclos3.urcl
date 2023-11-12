@@ -1076,7 +1076,9 @@ LOD R6 .OSVar_CWD
 LOD R3 SP
 LOD R3 R3
 LOD R1 R3
+PSH R0
 BRZ .Scal_Rdir_BadDir R1
+POP R0
 BRE .Scal_Rdir_UseCWD R1 '.'
 BRE .Scal_Rdir_UseRoot R1 '/'
 JMP .Scal_Rdir_UseDefault
