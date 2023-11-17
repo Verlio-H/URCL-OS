@@ -496,7 +496,7 @@ INC R1 R1
 BNZ .Scal_Creat_NameLoop R2
 BRP ~+2 R1
 MOV R1 R0 //in case someone trys to name a file "\0"
-ADD R3 R1 68
+ADD R3 R1 20
 PSH R4
 CAL .FindNextSpace
 MOV R3 R4
@@ -509,7 +509,7 @@ OUT %BUS R6 //
 STR .OSVar_Restricted_Temp R6
 DEC R3 R3
 OUT %ADDR R3
-OUT %BUS 64 //
+OUT %BUS 16 //
 DEC R3 R3
 OUT %ADDR R3
 OUT %BUS 0 //
@@ -621,7 +621,7 @@ OUT %ADDR R8
 OUT %BUS 0
 INC R8 R8
 OUT %ADDR R8
-OUT %BUS 64
+OUT %BUS 16
 INC R8 R8
 OUT %ADDR R8
 LOD R6 .OSVar_Restricted_Temp
