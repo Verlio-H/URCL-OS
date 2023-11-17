@@ -810,6 +810,7 @@ ADD R7 R4 3
 OUT %ADDR R7
 IN R4 %BUS
 //IF SEEK + AMOUNT >= PTR + DST.LEN THEN1
+.Scal_Write_Next
 LOD R6 R1 //seek
 ADD R6 R6 R3
 DEC R7 R7
@@ -818,14 +819,13 @@ IN R7 %BUS
 ADD R7 R4 R7
 STR .OSVar_Restricted_Temp 0
 BRL .Scal_Write_NoFrag R6 R7
-//  AMOUNT = DST.END - SEEK + 1
+//  AMOUNT = DST.END - SEEK
 LLOD R6 R1 2
 LLOD R7 R1 3
 BRZ ~+2 R7
 DEC R6 R6
 LOD R7 R1
 SUB R6 R6 R7
-INC R6 R6
 //  REMAINING = AMOUNT - NEWAMOUNT
 SUB R8 R3 R6
 MOV R3 R6
@@ -851,7 +851,6 @@ BRL .Scal_Write_Loop R4 R7
 STR R1 R4
 LOD R6 .OSVar_Restricted_Temp //creatfrag
 BRZ .Scal_Write_End R6
-DEC R4 R4
 //IF CREATFRAG
 //  IF frag exists
 LLOD R6 R1 3
@@ -897,9 +896,25 @@ IN R4 %BUS
 INC R4 R4
 JMP .Scal_Write_CreatFrag_FindEnd
 .Scal_Write_CreatFrag_FindEnd_End
+IN R3 %BUS //update dir header
+OR R3 R3 4
+OUT %BUS R3
+//update actual header
+MOV R6 R4
+DEC R6 R6
+OUT %ADDR R6
+IN R3 %BUS
+BSR R3 R3 8
+ADD R3 R3 3
+ADD R6 R6 3
+OUT %ADDR R6
+IN R6 %BUS
+SUB R6 R6 R3
+OUT %ADDR R6
 IN R3 %BUS
 OR R3 R3 4
 OUT %BUS R3
+//
 INC R4 R4
 OUT %ADDR R4
 IN R6 %BUS
@@ -953,15 +968,17 @@ SUB R4 R4 4
 LSTR R1 1 R4
 ADD R4 R4 4
 LSTR R1 3 0
-.Scal_Write_FragExists_Return
 //  UPDATE FD
 ADD R6 R4 R8
 LSTR R1 2 R6
+.Scal_Write_FragExists_Return
 //  AMOUNT = REMAINING
 MOV R3 R8
 //  JUMP BACK TO .Scal_Write_NoFrag WITH REMAINING AS NEW AMOUNT, CREATFRAG AS FALSE
 STR .OSVar_Restricted_Temp 0
-JMP .Scal_Write_NoFrag
+LLOD R4 R1 1
+ADD R7 R4 3
+JMP .Scal_Write_Next
 .Scal_Write_End
 POP R4
 RET
