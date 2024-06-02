@@ -94,7 +94,7 @@ DW .Scal_Error //.Scal_time //17
 DW .Scal_Rdir //18
 DW .Scal_Malloc //19
 DW .Scal_Free //20
-DW .Scal_Error //.Scal_Realloc //21
+DW .Scal_Realloc //21
 DW .Scal_Puts //22
 DW .Scal_Putc //23
 DW .Scal_Putci //24
@@ -159,6 +159,8 @@ DW 0
 //10 = stack overflow
 //11 = stack underflow
 //12 = too many open files
+//13 = invalid lseek offset
+//14 = EOF
 
 .OSVar_Restricted_EndingString
 DW [10 "halting..." 10 0]
@@ -993,8 +995,35 @@ LOD R1 R1
 LOD R2 R1
 POP R3
 ADD R3 R3 .VirtualRegisters
-LOD R3 R3
+LOD R3 R3 //offset
+//check if negative offset
 ADD R2 R2 R3
+//check if exceeds end of fragment
+LLOD R3 R1 2
+LLOD R6 R1 3
+BRZ ~+2 R6
+DEC R3 R3
+BLE .Scal_Lseek_End R2 R3
+//check if remaining fragments
+BRZ .Scal_Lseek_EOF R6
+//get remaining amount
+SUB R2 R2 R3
+//go to next fragment if available
+INC R3 R3
+OUT %ADDR R3
+IN R3 %BUS
+//update fd
+LSTR R1 1 R3
+INC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+BSR R6 R6 2 //remaining seg
+LSTR R1 3 R6
+INC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+ADD 
+.Scal_Lseek_End
 STR R1 R2
 STR .OSVar_SEEKOFFSET R2
 RET
@@ -1307,6 +1336,79 @@ DEC R3 R3
 LOD R1 R3
 AND R1 R1 @SMAX
 STR R3 R1
+RET
+
+.Scal_Realloc
+ADD R3 R3 .VirtualRegisters
+PSH R3
+LOD R3 R3
+DEC R3 R3 //size
+PSH R3
+IMM R3 16
+CAL .Ins_Pop
+LLOD R6 .VirtualRegisters 16 //address
+POP R3
+DEC R6 R6
+LOD R2 R6
+AND R2 R2 0x7FFF
+//if the new size is less than current size, then split
+BRG .Scal_Realloc_expand R3 R2
+SUB R2 R2 R3
+DEC R2 R2
+BRN .Scal_Realloc_end R2
+OR R3 R3 0x8000
+STR R6 R3
+ADD R6 R6 R3
+INC R6 R6
+STR R6 R2
+STR .OSVar_MALLOCSADDR R6
+JMP .Scal_Realloc_end
+//R7 = next part address
+.Scal_Realloc_expand
+ADD R7 R6 R2
+INC R7 R7
+LOD R8 R7
+BRN .Scal_Realloc_Remalloc R8
+SUB R1 R3 R2
+DEC R1 R1
+BRL .Scal_Realloc_Remalloc R8 R1
+OR R3 R3 0x8000
+STR R6 R3
+BRE .Scal_Realloc_end R8 R3
+ADD R7 R7 R1 //newaddr = nextaddr + R1 + 1
+INC R7 R7 
+STR .OSVar_MALLOCSADDR R7
+SUB R8 R8 R1 //newsize = prevsize - R1
+STR R7 R8
+.Scal_Realloc_end
+POP R3
+INC R6 R6
+STR R3 R6
+RET
+
+.Scal_Realloc_Remalloc
+PSH R6
+PSH R2
+LSTR .VirtualRegisters 16 R3
+IMM R3 16
+CAL .Scal_Malloc
+LLOD R7 .VirtualRegisters 16
+POP R2
+POP R6
+POP R3
+STR R3 R7
+//unalloc original (this should go after if I ever multithread the kernel but in this case it saves like 1 operation so)
+STR R6 R2
+//copy data
+INC R6 R6
+MOV R8 R7
+.Scal_Realloc_CopyLoop
+CPY R7 R6
+INC R7 R7
+INC R6 R6
+DEC R2 R2
+BNZ .Scal_Realloc_CopyLoop R2
+
 RET
 
 .Scal_Puts
