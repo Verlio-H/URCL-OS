@@ -1358,8 +1358,7 @@ RET
 .Scal_Realloc
 ADD R3 R3 .VirtualRegisters
 PSH R3
-LOD R3 R3
-DEC R3 R3 //size
+LOD R3 R3 //size
 PSH R3
 IMM R3 16
 CAL .Ins_Pop
@@ -1395,7 +1394,8 @@ BRE .Scal_Realloc_end R8 R3
 ADD R7 R7 R1 //newaddr = nextaddr + R1 + 1
 INC R7 R7 
 STR .OSVar_MALLOCSADDR R7
-SUB R8 R8 R1 //newsize = prevsize - R1
+SUB R8 R8 R1 //newsize = prevsize - R1 - 1
+DEC R8 R8
 STR R7 R8
 .Scal_Realloc_end
 POP R3
