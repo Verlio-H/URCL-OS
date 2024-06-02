@@ -996,7 +996,10 @@ LOD R2 R1
 POP R3
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3 //offset
+PSH R2
 //check if negative offset
+.Scal_Lseek_Loop
+LOD R2 SP
 ADD R2 R2 R3
 //check if exceeds end of fragment
 LLOD R3 R1 2
@@ -1022,10 +1025,24 @@ LSTR R1 3 R6
 INC R3 R3
 OUT %ADDR R3
 IN R6 %BUS
-ADD 
+INC R3 R3
+OUT %ADDR R3
+IN R7 %BUS
+ADD R7 R7 R6
+LSTR R1 2 R7
+//next iteration
+MOV R3 R2
+JMP .Scal_Lseek_Loop
 .Scal_Lseek_End
 STR R1 R2
 STR .OSVar_SEEKOFFSET R2
+POP R0
+RET
+
+.Scal_Lseek_EOF
+POP R0
+STR .OSVar_ERROR 14 //EOF error
+//TODO: make this jump to the end of the file
 RET
 
 .Scal_Exec
