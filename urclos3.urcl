@@ -464,13 +464,15 @@ RET
 .Scal_Exit
 ADD R3 R3 .VirtualRegisters
 LOD R3 R3 //exit code
-PSH R5
 PSH R3
 LOD R3 R5
 DEC R3 R3
 CAL .Scal_Free_SkipGet
+LOD R3 R5
+LLOD R3 R3 5
+BRZ ~+2 R3
+CAL .Scal_Free_SkipGet
 POP R3
-POP R5
 STR .OSVar_EXIT R3
 DEC R5 R5
 LOD R1 R5 //the one before
