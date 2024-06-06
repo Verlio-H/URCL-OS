@@ -1072,24 +1072,50 @@ STR .OSVar_Restricted_CurrentFinalProc R7
 STR R7 R3
 LOD R6 .OSVar_Restricted_NextPID
 DEC R6 R6
+STR R3 R6 //PID
+INC R3 R3 //+1
 LOD R1 R5
-STR R3 R6
-INC R3 R3
 INC R1 R1
-CPY R3 R1
-INC R3 R3
-STR R3 R0
-INC R3 R3
-STR R3 R4
-INC R3 R3
+CPY R3 R1 //Start
+INC R3 R3 //+2
+STR R3 R0 //Name
+INC R3 R3 //+3
+STR R3 R4 //Read
+INC R3 R3 //+4
 ADD R1 R1 3
-CPY R3 R1
+CPY R3 R1 //Seek
 INC R1 R1
-INC R3 R3
-CPY R3 R1
+INC R3 R3 //+5
+//Stack
+LOD R6 R1
+PSH R6
+STR R3 R0
+PSH R0
+BRZ .Scal_Fork_NoStack R6
+PSH R3
+PSH R1
+PSH R6
+IMM R3 16
+LSTR .VirtualRegisters 16 64
+CAL .Scal_Malloc
+LLOD R2 .VirtualRegisters 16
+POP R6
+POP R1
+POP R3
+DEC R2 R2
+STR SP R2
+STR R3 R2
+IMM R8 64
+.Scal_Fork_Copy
+INC R2 R2
+INC R6 R6
+CPY R2 R6
+DEC R8 R8
+BNZ .Scal_Fork_Copy R8
+.Scal_Fork_NoStack
 INC R1 R1
-INC R3 R3
-CPY R3 R1
+INC R3 R3 //+6
+CPY R3 R1 //Error
 INC R3 R3
 MOV R2 R0
 ADD R1 .VirtualRegisters 1
@@ -1100,10 +1126,17 @@ INC R3 R3
 INC R1 R1
 INC R2 R2
 BRL .Scal_Fork_UpdateLoop R2 15
+POP R2
+POP R6
+DEC R3 R3
+SUB R8 R8 R6 //rebase sp
+ADD R8 R8 R2
+STR R3 R8
 POP R1
-SUB R3 R3 16
+SUB R3 R3 15
 LSTR R3 R1 R0
 RET
+
 
 .Scal_GetPID
 ADD R3 R3 .VirtualRegisters
