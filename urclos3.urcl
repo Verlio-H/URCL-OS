@@ -1,18 +1,11 @@
 // THIS IS A BETA AND BUGS WILL BE PRESENT
 
-// URCL OS v3.0.0
+// URCL OS v3.1
 
-// Whats new in v3.0.0:
-// Rewrite of all systemcalls
-// Multithreading
-// Memory management
-// Slight change in IL
-// Proper FS interaction
-
-// Whats next:
-// More system utils
-// More system calls
-// Reorganization and optimization
+// Whats new in v3.1:
+// realloc syscall
+// various bug fixes
+// rudimentary ed implementation
 
 //HEADERS
 BITS >= 16
@@ -750,6 +743,7 @@ BRL .Scal_Read_Loop R2 R3
 LOD R3 .OSVar_Restricted_Temp
 BNE .Scal_Read_NextSegment R3 R6
 .Scal_Read_End
+LOD R3 .OSVar_Restricted_Temp
 LSTR .VirtualRegisters 16 R3
 IMM R3 16
 CAL .Ins_Push
@@ -828,10 +822,10 @@ BRL .Scal_Write_NoFrag R6 R7
 LLOD R6 R1 2
 LLOD R7 R1 3
 BRZ ~+2 R7
-DEC R6 R6
+DEC R6 R6 //might be something wrong here
 LOD R7 R1
-SUB R6 R6 R7
 //  REMAINING = AMOUNT - NEWAMOUNT
+SUB R6 R6 R7
 SUB R8 R3 R6
 MOV R3 R6
 INC R3 R3
@@ -842,6 +836,7 @@ STR .OSVar_Restricted_Temp 1
 //WHILE PTR < SEEK + AMOUNT
 LOD R4 R1
 ADD R7 R4 R3
+BGE .Scal_Write_AfterLoop R4 R7
 .Scal_Write_Loop
 //  CPY PTR SRC
 OUT %ADDR R4
@@ -852,6 +847,7 @@ INC R2 R2
 //  INC PTR PTR
 INC R4 R4
 BRL .Scal_Write_Loop R4 R7
+.Scal_Write_AfterLoop
 //LSEEK = PTR
 STR R1 R4
 LOD R6 .OSVar_Restricted_Temp //creatfrag
@@ -915,11 +911,11 @@ ADD R6 R6 3
 OUT %ADDR R6
 IN R6 %BUS
 SUB R6 R6 R3
+//2nd word of actual header
 OUT %ADDR R6
 IN R3 %BUS
 OR R3 R3 4
 OUT %BUS R3
-//
 INC R4 R4
 OUT %ADDR R4
 IN R6 %BUS
@@ -969,12 +965,13 @@ OUT %BUS R6
 //  UPDATE SEEK
 INC R4 R4
 STR R1 R4
-SUB R4 R4 4
+SUB R4 R4 5
 LSTR R1 1 R4
-ADD R4 R4 4
+ADD R4 R4 5
 LSTR R1 3 0
 //  UPDATE FD
 ADD R6 R4 R8
+DEC R6 R6
 LSTR R1 2 R6
 .Scal_Write_FragExists_Return
 //  AMOUNT = REMAINING
@@ -983,6 +980,7 @@ MOV R3 R8
 STR .OSVar_Restricted_Temp 0
 LLOD R4 R1 1
 ADD R7 R4 3
+LOD R4 R1
 JMP .Scal_Write_Next
 .Scal_Write_End
 POP R4
