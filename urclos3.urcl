@@ -3,6 +3,7 @@
 // Changes in 3.1.1:
 // Optimized Registers
 // Reduced context switch calls
+// Optimize some stuff into LLOD and LSTR
 
 // Changes in v3.1:
 // realloc syscall
@@ -11,7 +12,7 @@
 
 //HEADERS
 BITS 16
-MINREG 9 
+MINREG 10 
 MINHEAP 4096
 MINSTACK 16
 
@@ -243,81 +244,59 @@ NOP //to silence URCX
 RET
 
 .Ins_Immediate
-ADD R3 R3 R9
 INC R4 R4
 OUT %ADDR R4
 IN R6 %BUS
-STR R3 R6
+LSTR R3 R9 R6
 RET
 
 .Ins_Add
-ADD R3 R3 R9
-ADD R2 R2 R9
-ADD R1 R1 R9
-LOD R2 R2
-LOD R1 R1
+LLOD R2 R2 R9
+LLOD R1 R1 R9
 ADD R1 R2 R1
-STR R3 R1
+LSTR R3 R9 R1
 RET
 
 .Ins_Subtract
-ADD R3 R3 R9
-ADD R2 R2 R9
-ADD R1 R1 R9
-LOD R2 R2
-LOD R1 R1
+LLOD R2 R2 R9
+LLOD R1 R1 R9
 SUB R1 R2 R1
-STR R3 R1
+LSTR R3 R9 R1
 RET
 
 .Ins_And
-ADD R3 R3 R9
-ADD R2 R2 R9
-ADD R1 R1 R9
-LOD R2 R2
-LOD R1 R1
+LLOD R2 R2 R9
+LLOD R1 R1 R9
 AND R1 R1 R2
-STR R3 R1
+LSTR R3 R9 R1
 RET
 
 .Ins_Nor
-ADD R3 R3 R9
-ADD R2 R2 R9
-ADD R1 R1 R9
-LOD R2 R2
-LOD R1 R1
+LLOD R2 R2 R9
+LLOD R1 R1 R9
 NOR R1 R1 R2
-STR R3 R1
+LSTR R3 R9 R1
 RET
 
 .Ins_ShiftLeft
-ADD R3 R3 R9
-ADD R2 R2 R9
-ADD R1 R1 R9
-LOD R2 R2
-LOD R1 R1
+LLOD R2 R2 R9
+LLOD R1 R1 R9
 BSL R1 R2 R1
-STR R3 R1
+LSTR R3 R9 R1
 RET
 
 .Ins_ShiftRight
-ADD R3 R3 R9
-ADD R2 R2 R9
-ADD R1 R1 R9
-LOD R2 R2
-LOD R1 R1
+LLOD R2 R2 R9
+LLOD R1 R1 R9
 BSR R1 R2 R1
-STR R3 R1
+LSTR R3 R9 R1
 RET
 
 .Ins_BranchIfGreaterThanOrEqual
-ADD R2 R2 R9
-ADD R1 R1 R9
-LOD R2 R2
-LOD R1 R1
+LLOD R2 R2 R9
+LLOD R1 R1 R9 
 BRL .Ins_BranchIfGreaterThanOrEqual_NoBranch R2 R1
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 LOD R6 R5 //pd pointer
 LLOD R6 R6 1 //load start of program
 ADD R4 R6 R3 //branc
@@ -326,13 +305,10 @@ DEC R4 R4
 RET
 
 .Ins_BranchIfEqual
-ADD R2 R2 R9
-ADD R1 R1 R9
-LOD R2 R2
-LOD R1 R1
+LLOD R2 R2 R9
+LLOD R1 R1 R9
 BNE .Ins_BranchIfEqual_NoBranch R2 R1
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 LOD R6 R5 //pd pointer
 LLOD R6 R6 1 //load start of program
 ADD R4 R6 R3 //branc
@@ -341,22 +317,19 @@ DEC R4 R4
 RET
 
 .Ins_LoadMemory
-ADD R2 R2 R9
+LLOD R2 R2 R9
 ADD R3 R3 R9
-LOD R2 R2
 CPY R3 R2
 RET
 
 .Ins_StoreMemory
+LLOD R3 R3 R9
 ADD R2 R2 R9
-ADD R3 R3 R9
-LOD R3 R3
 CPY R3 R2
 RET
 
 .Ins_Push
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 LOD R6 R5
 LLOD R7 R6 5 //stack location
 BRZ .Ins_Push_CreateStack R7
@@ -408,8 +381,7 @@ LSTR R9 15 R8
 RET
 
 .Ins_BulkImmediate
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 .Ins_BulkImmediate_Loop
 INC R4 R4
 OUT %ADDR R4
@@ -425,7 +397,6 @@ OR R1 R1 R2
 BRG .Ins_SystemCall_InvalidSyscall R1 37
 LLOD R1 R1 .SystemCalls
 CAL R1
-CAL .ContextSwitch
 RET
 
 .Ins_SystemCall_InvalidSyscall
@@ -440,8 +411,7 @@ RET
 //R6 - R8 = temp
 
 .Scal_Exit
-ADD R3 R3 R9
-LOD R3 R3 //exit code
+LLOD R3 R3 R9 //exit code
 PSH R3
 LOD R3 R5
 DEC R3 R3
@@ -464,11 +434,11 @@ LOD R2 R1
 STR R5 R2 //puts last into current
 STR R1 0
 //IMM R5 .ProcessDescriptors
+CAL .ContextSwitch
 RET
 
 .Scal_Creat
-ADD R3 R3 R9
-LOD R3 R3 //pointer to name string
+LLOD R3 R3 R9 //pointer to name string
 //get length
 IMM R1 -2
 PSH R3
@@ -631,9 +601,8 @@ BNZ .Scal_Open_Loop R2
 BRE .Scal_Open_Error R2 -1
 DEC R1 R1
 POP R3
-ADD R3 R3 R9
 SUB R2 R1 .FileDescriptors
-STR R3 R2
+LSTR R3 R9 R2
 SUB R3 .VirtualRegister R9 
 STR .VirtualRegister 4
 PSH R1
@@ -667,8 +636,7 @@ STR .OSVar_ERROR 12
 RET
 
 .Scal_Close
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 ADD R3 R3 .FileDescriptors
 LOD R1 R3
 BRZ .Scal_Close_Error R1
@@ -685,8 +653,7 @@ STR .OSVar_ERROR 7
 RET
 
 .Scal_Read
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 PSH R3
 ADD R3 R3 .FileDescriptors
 LOD R1 R3 //fd to read from
@@ -770,8 +737,7 @@ JMP .Scal_Read_Big_Loop
 .Scal_Write
 PSH R4
 //LOD DST
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 ADD R3 R3 .FileDescriptors
 LOD R1 R3 //fd to read from
 //LOD SRC
@@ -1033,8 +999,7 @@ STR .OSVar_ERROR 14 //EOF error
 RET
 
 .Scal_Exec
-ADD R3 R3 R9
-LOD R4 R3
+LLOD R4 R3 R9
 LOD R1 R5
 LSTR R1 1 R4 //update start of program
 DEC R4 R4
@@ -1129,8 +1094,7 @@ CPY R3 R1 //haha I use that 1 cisc instruction noob
 RET
 
 .Scal_WaitPID
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 IMM R2 .ProcessDescriptors
 .Scal_WaitPID_CheckForPIDLoop
 LOD R1 R2
@@ -1139,11 +1103,11 @@ LOD R1 R1
 INC R2 R2
 BNE .Scal_WaitPID_CheckForPIDLoop R1 R3
 DEC R4 R4 //if process exists dont move onto next word
+CAL .ContextSwitch
 RET
 
 .Scal_Chdir
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 STR .OSVar_CWD R3
 RET
 
@@ -1366,8 +1330,7 @@ POP R0
 RET
 
 .Scal_Free
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 DEC R3 R3
 .Scal_Free_SkipGet
 LOD R1 R3
@@ -1449,14 +1412,12 @@ BNZ .Scal_Realloc_CopyLoop R2
 RET
 
 .Scal_Puts
-ADD R3 R3 R9
-LOD R1 R3
+LLOD R1 R3 R9
 CAL .PrintString
 RET
 
 .Scal_Putc
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 OUT %TEXT R3
 //OUT %HEX R3
 //OUT %TEXT 0x20
@@ -1470,8 +1431,7 @@ OUT %TEXT R3
 RET
 
 .Scal_Gets //TODO: make non blocking
-ADD R3 R3 R9
-LOD R3 R3
+LLOD R3 R3 R9
 PSH R3
 SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
@@ -1496,9 +1456,8 @@ STR R3 R0
 RET
 
 .Scal_Getc //TODO: make non blocking
-ADD R3 R3 R9
 IN R1 %TEXT
-STR R3 R1
+LSTR R3 R9 R1
 RET
 
 .Scal_Strlen
@@ -1599,8 +1558,7 @@ STR .OSVar_ERROR 9
 RET
 
 .Scal_Flen
-ADD R3 R3 R9 //me when pointer to a pointer to a pointer to a pointer
-LOD R3 R3
+LLOD R3 R3 R9 //me when pointer to a pointer to a pointer to a pointer
 ADD R3 R3 .FileDescriptors
 LOD R3 R3
 BRZ .Scal_Close_Error R3 //no open file
@@ -1761,6 +1719,7 @@ HLT
 //EXECUTIONSTUFF
 
 .ContextSwitch
+MOV R10 R0
 LOD R7 R5
 BRZ .ContextSwitch_LodNextProc R7
 LSTR R7 3 R4
@@ -1788,7 +1747,6 @@ LOD R7 R5
 BRZ .END R7
 JMP .ContextSwitch_Restartprocloop_Return
 
-
 .CreateStartingProc
 SUB R3 .VirtualRegister R9 
 STR .VirtualRegister 23
@@ -1807,6 +1765,7 @@ LSTR R3 5 R0
 LSTR R3 6 R0
 ADD R9 R3 7 //R0
 IMM R5 .ProcessDescriptors
+MOV R10 R0
 
 .Exec_Loop
 OUT %ADDR R4
@@ -1821,6 +1780,10 @@ ADD R6 R6 .InstructionTable
 LOD R6 R6
 CAL R6
 INC R4 R4
+INC R10 R10
 STR R9 R0 //keep R0 as 0
+BLE .Exec_Loop R10 255
+DEC R4 R4
+CAL .ContextSwitch
 JMP .Exec_Loop
 
