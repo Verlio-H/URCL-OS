@@ -1,15 +1,17 @@
-// THIS IS A BETA AND BUGS WILL BE PRESENT
+// URCL OS v3.1.1
 
-// URCL OS v3.1
+// Changes in 3.1.1:
+// Optimized Registers
+// Reduced context switch calls
 
-// Whats new in v3.1:
+// Changes in v3.1:
 // realloc syscall
-// various bug fixes
+// many many bug fixes
 // rudimentary ed implementation
 
 //HEADERS
-BITS >= 16
-MINREG 8
+BITS 16
+MINREG 9 
 MINHEAP 4096
 MINSTACK 16
 
@@ -166,25 +168,8 @@ DW 0
 .OSVar_Restricted_Temp2
 DW 0
 
-.VirtualRegisters
-DW 0 //0
-DW 0 //1
-DW 0 //2
-DW 0 //3
-DW 0 //4
-DW 0 //5
-DW 0 //6
-DW 0 //7
-DW 0 //8
-DW 0 //9
-DW 0 //A
-DW 0 //B
-DW 0 //C
-DW 0 //D
-DW 0 //E
-.VirtualRegisters_StackPointer
-DW 0 //F
-DW 0 //secret register for translations to use shhhhh
+.VirtualRegister
+DW 0
 
 .FileDescriptors
 DW 0
@@ -232,7 +217,7 @@ DW 0
 //Seek value
 //Stack location
 //Error status
-//Registers (1-15)
+//Registers (0-15)
 
 //Memory Block format:
 //@MSB = allocated?
@@ -258,7 +243,7 @@ NOP //to silence URCX
 RET
 
 .Ins_Immediate
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 INC R4 R4
 OUT %ADDR R4
 IN R6 %BUS
@@ -266,9 +251,9 @@ STR R3 R6
 RET
 
 .Ins_Add
-ADD R3 R3 .VirtualRegisters
-ADD R2 R2 .VirtualRegisters
-ADD R1 R1 .VirtualRegisters
+ADD R3 R3 R9
+ADD R2 R2 R9
+ADD R1 R1 R9
 LOD R2 R2
 LOD R1 R1
 ADD R1 R2 R1
@@ -276,9 +261,9 @@ STR R3 R1
 RET
 
 .Ins_Subtract
-ADD R3 R3 .VirtualRegisters
-ADD R2 R2 .VirtualRegisters
-ADD R1 R1 .VirtualRegisters
+ADD R3 R3 R9
+ADD R2 R2 R9
+ADD R1 R1 R9
 LOD R2 R2
 LOD R1 R1
 SUB R1 R2 R1
@@ -286,9 +271,9 @@ STR R3 R1
 RET
 
 .Ins_And
-ADD R3 R3 .VirtualRegisters
-ADD R2 R2 .VirtualRegisters
-ADD R1 R1 .VirtualRegisters
+ADD R3 R3 R9
+ADD R2 R2 R9
+ADD R1 R1 R9
 LOD R2 R2
 LOD R1 R1
 AND R1 R1 R2
@@ -296,9 +281,9 @@ STR R3 R1
 RET
 
 .Ins_Nor
-ADD R3 R3 .VirtualRegisters
-ADD R2 R2 .VirtualRegisters
-ADD R1 R1 .VirtualRegisters
+ADD R3 R3 R9
+ADD R2 R2 R9
+ADD R1 R1 R9
 LOD R2 R2
 LOD R1 R1
 NOR R1 R1 R2
@@ -306,9 +291,9 @@ STR R3 R1
 RET
 
 .Ins_ShiftLeft
-ADD R3 R3 .VirtualRegisters
-ADD R2 R2 .VirtualRegisters
-ADD R1 R1 .VirtualRegisters
+ADD R3 R3 R9
+ADD R2 R2 R9
+ADD R1 R1 R9
 LOD R2 R2
 LOD R1 R1
 BSL R1 R2 R1
@@ -316,9 +301,9 @@ STR R3 R1
 RET
 
 .Ins_ShiftRight
-ADD R3 R3 .VirtualRegisters
-ADD R2 R2 .VirtualRegisters
-ADD R1 R1 .VirtualRegisters
+ADD R3 R3 R9
+ADD R2 R2 R9
+ADD R1 R1 R9
 LOD R2 R2
 LOD R1 R1
 BSR R1 R2 R1
@@ -326,12 +311,12 @@ STR R3 R1
 RET
 
 .Ins_BranchIfGreaterThanOrEqual
-ADD R2 R2 .VirtualRegisters
-ADD R1 R1 .VirtualRegisters
+ADD R2 R2 R9
+ADD R1 R1 R9
 LOD R2 R2
 LOD R1 R1
 BRL .Ins_BranchIfGreaterThanOrEqual_NoBranch R2 R1
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 LOD R6 R5 //pd pointer
 LLOD R6 R6 1 //load start of program
@@ -341,12 +326,12 @@ DEC R4 R4
 RET
 
 .Ins_BranchIfEqual
-ADD R2 R2 .VirtualRegisters
-ADD R1 R1 .VirtualRegisters
+ADD R2 R2 R9
+ADD R1 R1 R9
 LOD R2 R2
 LOD R1 R1
 BNE .Ins_BranchIfEqual_NoBranch R2 R1
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 LOD R6 R5 //pd pointer
 LLOD R6 R6 1 //load start of program
@@ -356,44 +341,44 @@ DEC R4 R4
 RET
 
 .Ins_LoadMemory
-ADD R2 R2 .VirtualRegisters
-ADD R3 R3 .VirtualRegisters
+ADD R2 R2 R9
+ADD R3 R3 R9
 LOD R2 R2
 CPY R3 R2
 RET
 
 .Ins_StoreMemory
-ADD R2 R2 .VirtualRegisters
-ADD R3 R3 .VirtualRegisters
+ADD R2 R2 R9
+ADD R3 R3 R9
 LOD R3 R3
 CPY R3 R2
 RET
 
 .Ins_Push
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 LOD R6 R5
 LLOD R7 R6 5 //stack location
 BRZ .Ins_Push_CreateStack R7
 ADD R8 R7 64 //R8 = stack cap
-LLOD R6 .VirtualRegisters 15
+LLOD R6 R9 15
 BGE .Ins_Push_StackOverflow R6 R8
 BRL .Ins_Push_StackUnderflow R6 R7
 .Ins_Push_CreateStack_Ret
 INC R6 R6
 STR R6 R3
-LSTR .VirtualRegisters 15 R6
+LSTR R9 15 R6
 RET
 
 .Ins_Push_CreateStack
-LSTR .VirtualRegisters 16 64
+STR .VirtualRegister 64
 PSH R3
-IMM R3 16
+SUB R3 .VirtualRegister R9
 PSH R6
 CAL .Scal_Malloc
 POP R6
 POP R3
-LLOD R7 .VirtualRegisters 16 //address
+LOD R7 .VirtualRegister //address
 DEC R7 R7
 LSTR R6 5 R7
 MOV R6 R7
@@ -413,17 +398,17 @@ LOD R6 R5
 LLOD R6 R6 5 //stack location
 BRZ .Ins_Push_StackUnderflow R6
 ADD R7 R6 64
-LLOD R8 .VirtualRegisters 15
+LLOD R8 R9 15
 BRG .Ins_Push_StackOverflow R8 R7
 BLE .Ins_Push_StackUnderflow R8 R6
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 CPY R3 R8
 DEC R8 R8
-LSTR .VirtualRegisters 15 R8
+LSTR R9 15 R8
 RET
 
 .Ins_BulkImmediate
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 .Ins_BulkImmediate_Loop
 INC R4 R4
@@ -455,7 +440,7 @@ RET
 //R6 - R8 = temp
 
 .Scal_Exit
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3 //exit code
 PSH R3
 LOD R3 R5
@@ -482,7 +467,7 @@ STR R1 0
 RET
 
 .Scal_Creat
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3 //pointer to name string
 //get length
 IMM R1 -2
@@ -633,7 +618,7 @@ RET
 .Scal_Open
 PSH R4
 PSH R3
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 PSH ~+3
 PSH R3
 JMP .Scal_Rdir_SkipSetup
@@ -646,15 +631,15 @@ BNZ .Scal_Open_Loop R2
 BRE .Scal_Open_Error R2 -1
 DEC R1 R1
 POP R3
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 SUB R2 R1 .FileDescriptors
 STR R3 R2
-IMM R3 16
-LSTR .VirtualRegisters 16 4
+SUB R3 .VirtualRegister R9 
+STR .VirtualRegister 4
 PSH R1
 CAL .Scal_Malloc
 POP R1
-LLOD R4 .VirtualRegisters 16
+LOD R4 .VirtualRegister
 STR R1 R4
 MOV R1 R4
 LOD R3 .OSVar_Restricted_Temp
@@ -682,7 +667,7 @@ STR .OSVar_ERROR 12
 RET
 
 .Scal_Close
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 ADD R3 R3 .FileDescriptors
 LOD R1 R3
@@ -700,23 +685,23 @@ STR .OSVar_ERROR 7
 RET
 
 .Scal_Read
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 PSH R3
 ADD R3 R3 .FileDescriptors
 LOD R1 R3 //fd to read from
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 PSH R1
 CAL .Ins_Pop
 POP R1
-LLOD R7 .VirtualRegisters 16 //mem dest location
-IMM R3 16
+LOD R7 .VirtualRegister //mem dest location
+SUB R3 .VirtualRegister R9 
 PSH R1
 PSH R7
 CAL .Ins_Pop
 POP R7
 POP R1
-LLOD R6 .VirtualRegisters 16 //amount to read
+LOD R6 .VirtualRegister //amount to read
 BRZ .Scal_Close_Error R1
 POP R3
 BGE .Scal_Close_Error R3 16
@@ -744,8 +729,8 @@ LOD R3 .OSVar_Restricted_Temp
 BNE .Scal_Read_NextSegment R3 R6
 .Scal_Read_End
 LOD R3 .OSVar_Restricted_Temp
-LSTR .VirtualRegisters 16 R3
-IMM R3 16
+STR .VirtualRegister R3
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Push
 RET
 
@@ -785,24 +770,24 @@ JMP .Scal_Read_Big_Loop
 .Scal_Write
 PSH R4
 //LOD DST
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 ADD R3 R3 .FileDescriptors
 LOD R1 R3 //fd to read from
 //LOD SRC
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 PSH R1
 CAL .Ins_Pop
 POP R1
-LLOD R2 .VirtualRegisters 16
+LOD R2 .VirtualRegister
 //LOD AMOUNT
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 PSH R1
 PSH R2
 CAL .Ins_Pop
 POP R2
 POP R1
-LLOD R3 .VirtualRegisters 16
+LOD R3 .VirtualRegister
 //PTR = DST.START
 LLOD R4 R1 1
 ADD R7 R4 3
@@ -989,14 +974,14 @@ RET
 
 .Scal_Lseek
 PSH R3
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
-LLOD R1 .VirtualRegisters 16 //file
+LOD R1 .VirtualRegister //file
 ADD R1 R1 .FileDescriptors
 LOD R1 R1
 LOD R2 R1
 POP R3
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3 //offset
 PSH R2
 //check if negative offset
@@ -1048,7 +1033,7 @@ STR .OSVar_ERROR 14 //EOF error
 RET
 
 .Scal_Exec
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R4 R3
 LOD R1 R5
 LSTR R1 1 R4 //update start of program
@@ -1058,13 +1043,13 @@ RET
 .Scal_Fork
 PSH R3
 LOD R6 .OSVar_Restricted_NextPID
-LSTR R3 .VirtualRegisters R6
+LSTR R3 R9 R6
 INC R6 R6
 STR .OSVar_Restricted_NextPID R6
-IMM R3 16
-LSTR .VirtualRegisters 16 22
+SUB R3 .VirtualRegister R9 
+STR .VirtualRegister 23
 CAL .Scal_Malloc
-LLOD R3 .VirtualRegisters 16
+LOD R3 .VirtualRegister
 LOD R7 .OSVar_Restricted_CurrentFinalProc
 INC R7 R7
 STR .OSVar_Restricted_CurrentFinalProc R7
@@ -1094,10 +1079,10 @@ BRZ .Scal_Fork_NoStack R6
 PSH R3
 PSH R1
 PSH R6
-IMM R3 16
-LSTR .VirtualRegisters 16 64
+SUB R3 .VirtualRegister R9 
+STR .VirtualRegister 64
 CAL .Scal_Malloc
-LLOD R2 .VirtualRegisters 16
+LOD R2 .VirtualRegister
 POP R6
 POP R1
 POP R3
@@ -1117,14 +1102,14 @@ INC R3 R3 //+6
 CPY R3 R1 //Error
 INC R3 R3
 MOV R2 R0
-ADD R1 .VirtualRegisters 1
+MOV R1 R9
 .Scal_Fork_UpdateLoop
 LOD R8 R1
 STR R3 R8
 INC R3 R3
 INC R1 R1
 INC R2 R2
-BRL .Scal_Fork_UpdateLoop R2 15
+BRL .Scal_Fork_UpdateLoop R2 16
 POP R2
 POP R6
 DEC R3 R3
@@ -1138,13 +1123,13 @@ RET
 
 
 .Scal_GetPID
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R1 R5
 CPY R3 R1 //haha I use that 1 cisc instruction noob
 RET
 
 .Scal_WaitPID
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 IMM R2 .ProcessDescriptors
 .Scal_WaitPID_CheckForPIDLoop
@@ -1157,18 +1142,18 @@ DEC R4 R4 //if process exists dont move onto next word
 RET
 
 .Scal_Chdir
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 STR .OSVar_CWD R3
 RET
 
 .Scal_Rdir
 STR .OSVar_Restricted_Temp2 R4
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 PSH R3
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
-LLOD R6 .VirtualRegisters 16 //R6 = default dir
+LOD R6 .VirtualRegister //R6 = default dir
 BNE ~+2 R6 0xFFFF
 .Scal_Rdir_SkipSetup
 LOD R6 .OSVar_CWD
@@ -1309,7 +1294,7 @@ LOD R4 .OSVar_Restricted_Temp2
 RET
 
 .Scal_Malloc
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 PSH R3
 LOD R3 R3 //malloc size
 BGE .Scal_Malloc_InvalidOp R3 @SMAX
@@ -1381,7 +1366,7 @@ POP R0
 RET
 
 .Scal_Free
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 DEC R3 R3
 .Scal_Free_SkipGet
@@ -1391,13 +1376,13 @@ STR R3 R1
 RET
 
 .Scal_Realloc
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 PSH R3
 LOD R3 R3 //size
 PSH R3
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
-LLOD R6 .VirtualRegisters 16 //address
+LOD R6 .VirtualRegister //address
 POP R3
 DEC R6 R6
 LOD R2 R6
@@ -1441,10 +1426,10 @@ RET
 .Scal_Realloc_Remalloc
 PSH R6
 PSH R2
-LSTR .VirtualRegisters 16 R3
-IMM R3 16
+STR .VirtualRegister R3
+SUB R3 .VirtualRegister R9 
 CAL .Scal_Malloc
-LLOD R7 .VirtualRegisters 16
+LOD R7 .VirtualRegister
 POP R2
 POP R6
 POP R3
@@ -1464,15 +1449,17 @@ BNZ .Scal_Realloc_CopyLoop R2
 RET
 
 .Scal_Puts
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R1 R3
 CAL .PrintString
 RET
 
 .Scal_Putc
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 OUT %TEXT R3
+//OUT %HEX R3
+//OUT %TEXT 0x20
 RET
 
 .Scal_Putci
@@ -1483,15 +1470,15 @@ OUT %TEXT R3
 RET
 
 .Scal_Gets //TODO: make non blocking
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 PSH R3
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
-LLOD R2 .VirtualRegisters 16
-IMM R3 16
+LOD R2 .VirtualRegister
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
-LLOD R6 .VirtualRegisters 16
+LOD R6 .VirtualRegister
 POP R3
 BRZ .Scal_Gets_End R2
 LOD R7 .OSVar_ECHO
@@ -1509,13 +1496,13 @@ STR R3 R0
 RET
 
 .Scal_Getc //TODO: make non blocking
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 IN R1 %TEXT
 STR R3 R1
 RET
 
 .Scal_Strlen
-ADD R8 R3 .VirtualRegisters
+ADD R8 R3 R9
 LOD R3 R8
 IMM R1 -1
 .Scal_Strlen_Loop
@@ -1528,27 +1515,27 @@ RET
 
 .Scal_Lodosvar
 LLOD R3 .OSVar_CWD R3
-LSTR .VirtualRegisters 16 R3
-IMM R3 16
+STR .VirtualRegister R3
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Push
 RET
 
 .Scal_Strosvar
 MOV R1 R3
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
-LLOD R3 .VirtualRegisters 16
+LOD R3 .VirtualRegister
 LSTR .OSVar_CWD R1 R3
 RET
 
 .Scal_Getdirname
 PSH R3
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
-LLOD R2 .VirtualRegisters 16 //max length
+LOD R2 .VirtualRegister //max length
 DEC R2 R2
 POP R3
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 LOD R3 R3
 BRZ .Ins_Nop R2
 LOD R1 .OSVar_CWD
@@ -1582,16 +1569,16 @@ JMP .Scal_Getdirname_Loop
 RET
 
 .Scal_NthString
-ADD R3 R3 .VirtualRegisters
+ADD R3 R3 R9
 PSH R3
-IMM R3 16
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Pop
-LLOD R2 .VirtualRegisters 16
-IMM R3 16
+LOD R2 .VirtualRegister
+SUB R3 .VirtualRegister R9 
 PSH R2
 CAL .Ins_Pop
 POP R2
-LLOD R7 .VirtualRegisters 16
+LOD R7 .VirtualRegister
 POP R3
 LOD R1 R3
 BRZ .Scal_NthString_Success R7
@@ -1612,7 +1599,7 @@ STR .OSVar_ERROR 9
 RET
 
 .Scal_Flen
-ADD R3 R3 .VirtualRegisters //me when pointer to a pointer to a pointer to a pointer
+ADD R3 R3 R9 //me when pointer to a pointer to a pointer to a pointer
 LOD R3 R3
 ADD R3 R3 .FileDescriptors
 LOD R3 R3
@@ -1640,8 +1627,8 @@ IN R6 %BUS //next segment header address
 ADD R3 R6 2
 JMP .Scal_Flen_Loop
 .Scal_Flen_End
-LSTR .VirtualRegisters 16 R8
-IMM R3 16
+STR .VirtualRegister R8
+SUB R3 .VirtualRegister R9 
 CAL .Ins_Push
 RET
 
@@ -1781,14 +1768,6 @@ LOD R8 .OSVar_SEEKOFFSET
 LSTR R7 4 R8
 LOD R8 .OSVar_ERROR
 LSTR R7 6 R8
-//STR Regs
-ADD R7 R7 7
-ADD R6 .VirtualRegisters 1
-.ContextSwitch_StrRegLoop
-CPY R7 R6
-INC R6 R6
-INC R7 R7
-BLE .ContextSwitch_StrRegLoop R6 .VirtualRegisters_StackPointer
 //LOD next proc
 .ContextSwitch_LodNextProc
 INC R5 R5
@@ -1800,14 +1779,7 @@ LLOD R8 R7 4
 STR .OSVar_SEEKOFFSET R8
 LLOD R8 R7 6
 STR .OSVar_ERROR R8
-ADD R7 R7 7
-ADD R6 .VirtualRegisters 1
-.ContextSwitch_LodRegLoop
-CPY R6 R7
-INC R6 R6
-INC R8 R8
-INC R7 R7
-BLE .ContextSwitch_LodRegLoop R6 .VirtualRegisters_StackPointer
+ADD R9 R7 7
 RET
 
 .ContextSwitch_Restartprocloop
@@ -1818,10 +1790,10 @@ JMP .ContextSwitch_Restartprocloop_Return
 
 
 .CreateStartingProc
-IMM R3 16
-LSTR 16 .VirtualRegisters 22
+SUB R3 .VirtualRegister R9 
+STR .VirtualRegister 23
 CAL .Scal_Malloc
-LLOD R3 .VirtualRegisters 16
+LOD R3 .VirtualRegister
 STR .ProcessDescriptors R3
 STR R3 R0 //set PID to 0
 LSTR R3 1 R4
@@ -1833,18 +1805,12 @@ LSTR R3 3 R4
 LSTR R3 4 R0
 LSTR R3 5 R0
 LSTR R3 6 R0
-ADD R3 R3 7
-ADD R5 R3 15
-.CreateStartingProc_Loop
-STR R3 R0
-INC R3 R3
-BRL .CreateStartingProc_Loop R3 R5
+ADD R9 R3 7 //R0
 IMM R5 .ProcessDescriptors
 
 .Exec_Loop
 OUT %ADDR R4
 IN R6 %BUS
-//@DEBUG
 BSR R3 R6 12
 BSR R2 R6 8
 BSR R1 R6 4
@@ -1855,5 +1821,6 @@ ADD R6 R6 .InstructionTable
 LOD R6 R6
 CAL R6
 INC R4 R4
-STR .VirtualRegisters R0 //keep R0 as 0
+STR R9 R0 //keep R0 as 0
 JMP .Exec_Loop
+
