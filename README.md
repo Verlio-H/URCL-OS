@@ -12,11 +12,11 @@ urclos3.urcl contains a prelinked version of URCL-OS
 
 to create a functional URCL-OS build, one file from each subdirectory of src must be linked together
 
-to use the pre-configured targets use make. (eg. make normal)
+to use the pre-configured targets use make. (eg. make iris.urcl)
 
 Current pre-configured targets:
 
 | Target | Command | Additional Requirements |
 | ------ | ------- | ----------------------- |
-| 16 bit arch using storage ports & serial io| make normal | none |
-| IRIS redstone computer | make iris | gnu-sed |
+| 16 bit arch using storage ports & serial io| make urclos3.urcl | none |
+| IRIS redstone computer | make iris.urcl | gnu-sed |
