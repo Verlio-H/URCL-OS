@@ -1,3 +1,6 @@
+.PHONY:normal
+.PHONY:iris
+
 #ideal for simple device with seriel console supporting storage ports
 normal:
 	urcl-ld -o urclos3.urcl src/init/stdinit.urcl src/base/stdbase.urcl src/io/stdio.urcl src/fs/silkfs.urcl src/mem/stdmem.urcl
