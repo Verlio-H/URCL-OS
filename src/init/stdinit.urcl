@@ -1,0 +1,51 @@
+// URCL OS v3.1.1
+
+// Changes in 3.1.1:
+// Optimized Registers
+// Reduced context switch calls
+// Optimize some stuff into LLOD and LSTR
+
+// Changes in v3.1:
+// realloc syscall
+// many many bug fixes
+// rudimentary ed implementation
+
+//HEADERS
+BITS 16
+MINREG 10 
+MINHEAP 4096
+MINSTACK 16
+
+.Initialize
+OUT %ADDR 7 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
+IN R4 %BUS
+BRZ .Initialize_NoBoot R4
+STR !OSVar_STARTUPPROG R4
+STR !OSVar_MALLOCSADDR M0
+
+.Initialize_Memory
+SUB R5 @MINHEAP 2
+BGE .Initialize_ManyMemories R5 @SMAX
+STR M0 R5
+DEC R5 @MINHEAP
+LSTR M0 R5 -1
+JMP !CreateStartingProc
+
+.Initialize_ManyMemories
+DEC R5 @SMAX
+STR M0 R5
+SUB R5 @MINHEAP @MSB
+DEC R5 R5
+DEC R6 @MSB
+LSTR M0 R6 R5
+DEC R5 @MINHEAP
+LSTR M0 R5 -1
+JMP !CreateStartingProc
+
+.Initialize_NoBoot
+OUT %TEXT 'E'
+OUT %TEXT 'r'
+OUT %TEXT 'r'
+OUT %TEXT 'o'
+OUT %TEXT 'r'
+RET

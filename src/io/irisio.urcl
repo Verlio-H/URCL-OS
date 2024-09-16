@@ -1,0 +1,212 @@
+!Scal_Puts
+.Scal_Puts
+LLOD R1 R3 R9
+CAL .PrintString
+RET
+
+!Scal_Putc
+.Scal_Putc
+LLOD R3 R3 R9
+BRE .IRIS_Scal_putc_newLine R3 10
+OUT %TEXT R3
+RET
+
+!Scal_Putci
+.Scal_Putci
+INC R4 R4
+OUT %ADDR R4
+IN R3 %BUS
+BRE .IRIS_Scal_putc_newLine R3 10
+OUT %TEXT R3
+RET
+
+.IRIS_Scal_putc_newLine
+OUT %X 0
+ADD R20 R20 8
+BRL .IRIS_putc_NewLine_NoReset R20 96
+IMM R20 0
+OUT %BUFFER 0
+OUT %BUFFER 1
+OUT %BUFFER 0
+//OUT %CLEAR_SCREEN R0
+.IRIS_putc_NewLine_NoReset
+OUT %Y R20
+RET
+
+!Scal_Gets
+.Scal_Gets //TODO: make non blocking
+LLOD R3 R3 R9
+PSH R3
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R2 !VirtualRegister
+SUB R3 !VirtualRegister R9
+CAL !Ins_Pop
+LOD R6 !VirtualRegister
+POP R3
+BRZ .Scal_Gets_End R2
+LOD R7 !OSVar_ECHO
+.Scal_Gets_Loop
+IN R1 %TEXT
+CAL .IRIS_Keymap
+BRE .Scal_Gets_End R1 R6
+BRZ ~+2 R7
+OUT %TEXT R1
+STR R3 R1
+INC R3 R3
+DEC R2 R2
+BNZ .Scal_Gets_Loop R2
+.Scal_Gets_End
+STR R3 R0
+RET
+
+!Scal_Getc
+.Scal_Getc //TODO: make non blocking
+IN R1 %TEXT
+CAL .IRIS_Keymap
+LSTR R3 R9 R1
+RET
+
+!PrintString
+.PrintString //r1 = string address
+LOD R2 R1
+BRZ .PrintString_Exit R2
+BRE .IRIS_PrintString_NewLine R2 10
+OUT %TEXT R2
+INC R1 R1
+JMP .PrintString
+.PrintString_Exit
+RET
+
+.IRIS_PrintString_NewLine
+OUT %X 0
+ADD R20 R20 8
+BRL .IRIS_PrintString_NewLine_NoReset R20 96
+IMM R20 0
+OUT %BUFFER 0
+OUT %BUFFER 1
+OUT %BUFFER 0
+//OUT %CLEAR_SCREEN R0
+.IRIS_PrintString_NewLine_NoReset
+OUT %Y R20
+INC R1 R1
+JMP .PrintString
+
+.IRIS_Keymap
+BGE .IRIS_Keymap_Special R1 0x62
+LLOD R1 .IRIS_Keymap_map R1
+RET
+.IRIS_Keymap_Special
+BNE .IRIS_Keymap_Space R1 0x129
+IMM R1 0xA
+RET
+.IRIS_Keymap_Space
+BNE .IRIS_Keymap_Error R1 0xFF
+IMM R1 0x20
+RET
+
+.IRIS_Keymap_Error
+HLT
+
+.IRIS_Keymap_map
+RW 0x30 //numbers
+RW 0x31
+RW 0x32
+RW 0x33
+RW 0x34
+RW 0x35
+RW 0x36
+RW 0x37
+RW 0x38
+RW 0x39
+RW 0x41 //capital letters
+RW 0x42
+RW 0x43
+RW 0x44
+RW 0x45
+RW 0x46
+RW 0x47
+RW 0x48
+RW 0x49
+RW 0x4A
+RW 0x4B
+RW 0x4C
+RW 0x4D
+RW 0x4E
+RW 0x4F
+RW 0x50
+RW 0x51
+RW 0x52
+RW 0x53
+RW 0x54
+RW 0x55
+RW 0x56
+RW 0x57
+RW 0x58
+RW 0x59
+RW 0x5A
+RW 0x61 //lowercase letters
+RW 0x62
+RW 0x63
+RW 0x64
+RW 0x65
+RW 0x66
+RW 0x67
+RW 0x68
+RW 0x69
+RW 0x6A
+RW 0x6B
+RW 0x6C
+RW 0x6D
+RW 0x6E
+RW 0x6F
+RW 0x70
+RW 0x71
+RW 0x72
+RW 0x73
+RW 0x74
+RW 0x75
+RW 0x76
+RW 0x77
+RW 0x78
+RW 0x79
+RW 0x7A
+RW 0x2B//+
+RW 0x2D//-
+RW 0x3D//=
+RW 0x2F///
+RW 0x2A//asterisk
+RW 0x21//!
+RW 0x3F//?
+RW 0x25//%
+RW 0x2E//.
+RW 0x2C//,
+RW 0x28//(
+RW 0x29//)
+RW 0x5B//[
+RW 0x5D//]
+RW 0x7B//{
+RW 0x7D//}
+RW 0x3C//<
+RW 0x3E//>
+RW 0x2A
+RW 0x2A
+RW 0x3A//:
+RW 0x3B//;
+RW 0x5F//_
+RW 0x7C//|
+RW 0x2A
+RW 0x5E//^
+RW 0x7E//~
+RW 0x5C//\
+RW 0x2A
+RW 0x26//&
+RW 0x2A
+RW 0x40//@
+RW 0x27//'
+RW 0x24//$
+RW 0x2A
+RW 0x2A
+RW 0x23//#
+
+NOP //to silence urcx

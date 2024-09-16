@@ -1,37 +1,37 @@
-// URCL OS v3.1.1
+// URCL OS v3.stdinit_1.stdinit_1
 
-// Changes in 3.1.1:
+// Changes in 3.stdinit_1.stdinit_1:
 // Optimized Registers
 // Reduced context switch calls
 // Optimize some stuff into LLOD and LSTR
 
-// Changes in v3.1:
+// Changes in v3.stdinit_1:
 // realloc syscall
 // many many bug fixes
 // rudimentary ed implementation
 
 //HEADERS
 BITS 16
-MINREG 10 
+MINREG 10
 MINHEAP 4096
 MINSTACK 16
 
-.Initialize
+.stdinit_Initialize
 OUT %ADDR 7 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
 IN R4 %BUS
-BRZ .Initialize_NoBoot R4
-STR .OSVar_STARTUPPROG R4
-STR .OSVar_MALLOCSADDR M0
+BRZ .stdinit_Initialize_NoBoot R4
+STR .stdbase_OSVar_STARTUPPROG R4
+STR .stdbase_OSVar_MALLOCSADDR M0
 
-.Initialize_Memory
+.stdinit_Initialize_Memory
 SUB R5 @MINHEAP 2
-BGE .Initialize_ManyMemories R5 @SMAX
+BGE .stdinit_Initialize_ManyMemories R5 @SMAX
 STR M0 R5
 DEC R5 @MINHEAP
 LSTR M0 R5 -1
-JMP .CreateStartingProc
+JMP .stdbase_CreateStartingProc
 
-.Initialize_ManyMemories
+.stdinit_Initialize_ManyMemories
 DEC R5 @SMAX
 STR M0 R5
 SUB R5 @MINHEAP @MSB
@@ -40,106 +40,105 @@ DEC R6 @MSB
 LSTR M0 R6 R5
 DEC R5 @MINHEAP
 LSTR M0 R5 -1
-JMP .CreateStartingProc
+JMP .stdbase_CreateStartingProc
 
-.Initialize_NoBoot
+.stdinit_Initialize_NoBoot
 OUT %TEXT 'E'
 OUT %TEXT 'r'
 OUT %TEXT 'r'
 OUT %TEXT 'o'
 OUT %TEXT 'r'
 RET
+.stdbase_InstructionTable
+DW .stdbase_Ins_Nop
+DW .stdbase_Ins_Immediate // 1
+DW .stdbase_Ins_Add // 2
+DW .stdbase_Ins_Subtract // 3
+DW .stdbase_Ins_And // 4
+DW .stdbase_Ins_Nor // 5
+DW .stdbase_Ins_ShiftLeft // 6
+DW .stdbase_Ins_ShiftRight // 7
+DW .stdbase_Ins_BranchIfGreaterThanOrEqual // 8
+DW .stdbase_Ins_BranchIfEqual // 9
+DW .stdmem_Ins_LoadMemory // 10
+DW .stdmem_Ins_StoreMemory // 11
+DW .stdmem_Ins_Push // 12
+DW .stdmem_Ins_Pop // 13
+DW .stdmem_Ins_BulkImmediate //14
+DW .stdbase_Ins_SystemCall //15
 
-.InstructionTable
-DW .Ins_Nop
-DW .Ins_Immediate // 1
-DW .Ins_Add // 2
-DW .Ins_Subtract // 3
-DW .Ins_And // 4
-DW .Ins_Nor // 5
-DW .Ins_ShiftLeft // 6
-DW .Ins_ShiftRight // 7
-DW .Ins_BranchIfGreaterThanOrEqual // 8
-DW .Ins_BranchIfEqual // 9
-DW .Ins_LoadMemory // 10
-DW .Ins_StoreMemory // 11
-DW .Ins_Push // 12
-DW .Ins_Pop // 13
-DW .Ins_BulkImmediate //14
-DW .Ins_SystemCall //15
-
-.SystemCalls
-DW .Scal_Exit //0
-DW .Scal_Creat //1
-DW .Scal_Open //2
-DW .Scal_Close //3
-DW .Scal_Read //4
-DW .Scal_Write //5
-DW .Scal_Lseek //6
-DW .Scal_Error //.Scal_Link //7
-DW .Scal_Error //.Scal_Unlink //8
-DW .Scal_Error //.Scal_Stat //9
-DW .Scal_Exec //10
-DW .Scal_Fork //11
-DW .Scal_GetPID //12
-DW .Scal_WaitPID //13
- DW .Scal_Error//DW .Scal_Kill //14
-DW .Scal_Chdir // //15
-DW .Scal_Error //.Scal_Stime //16
-DW .Scal_Error //.Scal_time //17
-DW .Scal_Rdir //18
-DW .Scal_Malloc //19
-DW .Scal_Free //20
-DW .Scal_Realloc //21
-DW .Scal_Puts //22
-DW .Scal_Putc //23
-DW .Scal_Putci //24
-DW .Scal_Gets //25
-DW .Scal_Getc //26
-DW .Scal_Error //.Scal_Memcmp //27
-DW .Scal_Error //.Scal_Memcpy //28
-DW .Scal_Error //.Scal_Rand //29
-DW .Scal_Error //.Scal_Strcmp //30
-DW .Scal_Error //.Scal_Strcpy //31
-DW .Scal_Strlen //32
-DW .Scal_Lodosvar //33
-DW .Scal_Strosvar //34
-DW .Scal_Getdirname //35
-DW .Scal_NthString //36
-DW .Scal_Flen //37
-//OSVariables:
-.OSVar_CWD
+.stdbase_SystemCalls
+DW .stdbase_Scal_Exit //0
+DW .silkfs_Scal_Creat //1
+DW .silkfs_Scal_Open //2
+DW .silkfs_Scal_Close //3
+DW .silkfs_Scal_Read //4
+DW .silkfs_Scal_Write //5
+DW .silkfs_Scal_Lseek //6
+DW .stdbase_Scal_Error //.Scal_Link //7
+DW .stdbase_Scal_Error //.Scal_Unlink //8
+DW .stdbase_Scal_Error //.Scal_Stat //9
+DW .stdbase_Scal_Exec //10
+DW .stdbase_Scal_Fork //11
+DW .stdbase_Scal_GetPID //12
+DW .stdbase_Scal_WaitPID //13
+DW .stdbase_Scal_Error//DW .Scal_Kill //14
+DW .stdbase_Scal_Chdir // //15
+DW .stdbase_Scal_Error //.Scal_Stime //16
+DW .stdbase_Scal_Error //.Scal_time //17
+DW .silkfs_Scal_Rdir //18
+DW .stdmem_Scal_Malloc //19
+DW .stdmem_Scal_Free //20
+DW .stdmem_Scal_Realloc //21
+DW .stdio_Scal_Puts //22
+DW .stdio_Scal_Putc //23
+DW .stdio_Scal_Putci //24
+DW .stdio_Scal_Gets //TODO: make non blocking //25
+DW .stdio_Scal_Getc //TODO: make non blocking //26
+DW .stdbase_Scal_Error //.Scal_Memcmp //27
+DW .stdbase_Scal_Error //.Scal_Memcpy //28
+DW .stdbase_Scal_Error //.Scal_Rand //29
+DW .stdbase_Scal_Error //.Scal_Strcmp //30
+DW .stdbase_Scal_Error //.Scal_Strcpy //31
+DW .stdbase_Scal_Strlen //32
+DW .stdbase_Scal_Lodosvar //33
+DW .stdbase_Scal_Strosvar //34
+DW .silkfs_Scal_Getdirname //35
+DW .stdbase_Scal_NthString //36
+DW .silkfs_Scal_Flen //37
+//OSVARIABLES:
+.stdbase_OSVar_CWD
 DW 0 //CWD
-.OSVar_ROOT
+.stdbase_OSVar_ROOT
 DW 0
-.OSVar_PATH
+.stdbase_OSVar_PATH
 DW 0 //configured on startup (/bin)
-.OSVar_SHELL
+.stdbase_OSVar_SHELL
 DW 0 //configured on startup (/bin/sh)
-.OSVar_ECHO
+.stdbase_OSVar_ECHO
 DW 1
-.OSVar_MEMLIMIT
+.stdbase_OSVar_MEMLIMIT
 //DW @HEAP
 DW @MINHEAP //use this on bad emu that no have @HEAP (I am looking at you bram)
-.OSVar_BITS
+.stdbase_OSVar_BITS
 DW @BITS
-.OSVar_MEM0
+.stdbase_OSVar_MEM0
 DW M0
-.OSVar_MALLOCSADDR
+.stdbase_OSVar_MALLOCSADDR
 DW M0
-.OSVar_USERNAME
+.stdbase_OSVar_USERNAME
 DW @MAX //configured on startup
-.OSVar_SEEKOFFSET
+.stdbase_OSVar_SEEKOFFSET
 DW 0
-.OSVar_CPP
+.stdbase_OSVar_CPP
 DW 0
-.OSVar_PROCNAME
+.stdbase_OSVar_PROCNAME
 DW 0 //write only
-.OSVar_EXIT
+.stdbase_OSVar_EXIT
 DW 0
-.OSVar_STARTUPPROG
+.stdbase_OSVar_STARTUPPROG
 DW 0
-.OSVar_ERROR
+.stdbase_OSVar_ERROR
 DW 0
 
 //0 = successful
@@ -158,21 +157,528 @@ DW 0
 //13 = invalid lseek offset
 //14 = EOF
 
-.OSVar_Restricted_EndingString
+.stdbase_OSVar_Restricted_EndingString
 DW [10 "halting..." 10 0]
-.OSVar_Restricted_CurrentFinalProc
-DW .ProcessDescriptors
-.OSVar_Restricted_NextPID
+.stdbase_OSVar_Restricted_CurrentFinalProc
+DW .stdbase_ProcessDescriptors
+.stdbase_OSVar_Restricted_NextPID
 DW 1
-.OSVar_Restricted_Temp
+.stdbase_OSVar_Restricted_Temp
 DW 0
-.OSVar_Restricted_Temp2
-DW 0
-
-.VirtualRegister
+.stdbase_OSVar_Restricted_Temp2
 DW 0
 
-.FileDescriptors
+.stdbase_VirtualRegister
+DW 0
+
+DW 0
+.stdbase_ProcessDescriptors //pointers to them
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+
+//PROCESS descriptor format:
+//PID
+//START of program
+//NAME of program (string pointer)
+//CURRENT read address
+//SEEK value
+//STACK location
+//ERROR status
+//REGISTERS (0-15)
+
+//MEMORY Block format:
+//@MSB = allocated?
+//REST = length
+
+//FILE descriptor format:
+//SEEK address
+//FILE header addr
+//CURRENT Segment end
+//REMAINING segments
+
+
+
+//INSTRUCTIONS
+//OP1 = R3
+//OP2 = R2
+//OP3 = R1
+//PC = R4
+//CURRENTPROC = R5
+//R6 = R8 = temp
+NOP //to silence URCX
+.stdbase_Ins_Nop
+RET
+
+.stdbase_Ins_Immediate
+INC R4 R4
+OUT %ADDR R4
+IN R6 %BUS
+LSTR R3 R9 R6
+RET
+
+.stdbase_Ins_Add
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+ADD R1 R2 R1
+LSTR R3 R9 R1
+RET
+
+.stdbase_Ins_Subtract
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+SUB R1 R2 R1
+LSTR R3 R9 R1
+RET
+
+.stdbase_Ins_And
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+AND R1 R1 R2
+LSTR R3 R9 R1
+RET
+
+.stdbase_Ins_Nor
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+NOR R1 R1 R2
+LSTR R3 R9 R1
+RET
+
+.stdbase_Ins_ShiftLeft
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+BSL R1 R2 R1
+LSTR R3 R9 R1
+RET
+
+.stdbase_Ins_ShiftRight
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+BSR R1 R2 R1
+LSTR R3 R9 R1
+RET
+
+.stdbase_Ins_BranchIfGreaterThanOrEqual
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+BRL .stdbase_Ins_BranchIfGreaterThanOrEqual_NoBranch R2 R1
+LLOD R3 R3 R9
+LOD R6 R5 //pd pointer
+LLOD R6 R6 1 //load start of program
+ADD R4 R6 R3 //branc
+DEC R4 R4
+.stdbase_Ins_BranchIfGreaterThanOrEqual_NoBranch
+RET
+
+.stdbase_Ins_BranchIfEqual
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+BNE .stdbase_Ins_BranchIfEqual_NoBranch R2 R1
+LLOD R3 R3 R9
+LOD R6 R5 //pd pointer
+LLOD R6 R6 1 //load start of program
+ADD R4 R6 R3 //branc
+DEC R4 R4
+.stdbase_Ins_BranchIfEqual_NoBranch
+RET
+
+.stdbase_Ins_SystemCall
+BSL R2 R2 4
+OR R1 R1 R2
+BRG .stdbase_Ins_SystemCall_InvalidSyscall R1 37
+LLOD R1 R1 .stdbase_SystemCalls
+CAL R1
+RET
+
+.stdbase_Ins_SystemCall_InvalidSyscall
+STR .stdbase_OSVar_ERROR 6
+RET
+
+//SYSTEM CALLS
+//R1 + R2 = temp
+//OPERAND = R3
+//PC = R4
+//CURRENTPROC = R5
+//R6 - R8 = temp
+
+.stdbase_Scal_Exit
+LLOD R3 R3 R9 //exit code
+PSH R3
+LOD R3 R5
+DEC R3 R3
+CAL .stdmem_Scal_Free_SkipGet
+LOD R3 R5
+LLOD R3 R3 5
+BRZ ~+2 R3
+CAL .stdmem_Scal_Free_SkipGet
+POP R3
+STR .stdbase_OSVar_EXIT R3
+DEC R5 R5
+LOD R1 R5 //the one before
+INC R5 R5
+BRZ .stdbase_END R1
+LOD R1 .stdbase_OSVar_Restricted_CurrentFinalProc
+DEC R1 R1
+STR .stdbase_OSVar_Restricted_CurrentFinalProc R1
+INC R1 R1
+LOD R2 R1
+STR R5 R2 //puts last into current
+STR R1 0
+//IMM R5 .stdbase_ProcessDescriptors
+CAL .stdbase_ContextSwitch
+RET
+
+.stdbase_Scal_Exec
+LLOD R4 R3 R9
+LOD R1 R5
+LSTR R1 1 R4 //update start of program
+DEC R4 R4
+RET
+
+.stdbase_Scal_Fork
+PSH R3
+LOD R6 .stdbase_OSVar_Restricted_NextPID
+LSTR R3 R9 R6
+INC R6 R6
+STR .stdbase_OSVar_Restricted_NextPID R6
+SUB R3 .stdbase_VirtualRegister R9
+STR .stdbase_VirtualRegister 23
+CAL .stdmem_Scal_Malloc
+LOD R3 .stdbase_VirtualRegister
+LOD R7 .stdbase_OSVar_Restricted_CurrentFinalProc
+INC R7 R7
+STR .stdbase_OSVar_Restricted_CurrentFinalProc R7
+STR R7 R3
+LOD R6 .stdbase_OSVar_Restricted_NextPID
+DEC R6 R6
+STR R3 R6 //PID
+INC R3 R3 //+1
+LOD R1 R5
+INC R1 R1
+CPY R3 R1 //Start
+INC R3 R3 //+2
+STR R3 R0 //Name
+INC R3 R3 //+3
+STR R3 R4 //Read
+INC R3 R3 //+4
+ADD R1 R1 3
+CPY R3 R1 //Seek
+INC R1 R1
+INC R3 R3 //+5
+//STACK
+LOD R6 R1
+PSH R6
+STR R3 R0
+PSH R0
+BRZ .stdbase_Scal_Fork_NoStack R6
+PSH R3
+PSH R1
+PSH R6
+SUB R3 .stdbase_VirtualRegister R9
+STR .stdbase_VirtualRegister 64
+CAL .stdmem_Scal_Malloc
+LOD R2 .stdbase_VirtualRegister
+POP R6
+POP R1
+POP R3
+DEC R2 R2
+POP R0
+PSH R2
+STR R3 R2
+IMM R8 64
+.stdbase_Scal_Fork_Copy
+INC R2 R2
+INC R6 R6
+CPY R2 R6
+DEC R8 R8
+BNZ .stdbase_Scal_Fork_Copy R8
+.stdbase_Scal_Fork_NoStack
+INC R1 R1
+INC R3 R3 //+6
+CPY R3 R1 //Error
+INC R3 R3
+MOV R2 R0
+MOV R1 R9
+.stdbase_Scal_Fork_UpdateLoop
+LOD R8 R1
+STR R3 R8
+INC R3 R3
+INC R1 R1
+INC R2 R2
+BRL .stdbase_Scal_Fork_UpdateLoop R2 16
+POP R2
+POP R6
+DEC R3 R3
+SUB R8 R8 R6 //rebase sp
+ADD R8 R8 R2
+STR R3 R8
+POP R1
+SUB R3 R3 15
+LSTR R3 R1 R0
+RET
+
+
+.stdbase_Scal_GetPID
+ADD R3 R3 R9
+LOD R1 R5
+CPY R3 R1 //haha I use that 1 cisc instruction noob
+RET
+
+.stdbase_Scal_WaitPID
+LLOD R3 R3 R9
+IMM R2 .stdbase_ProcessDescriptors
+.stdbase_Scal_WaitPID_CheckForPIDLoop
+LOD R1 R2
+BRZ .stdbase_Ins_Nop R1
+LOD R1 R1
+INC R2 R2
+BNE .stdbase_Scal_WaitPID_CheckForPIDLoop R1 R3
+DEC R4 R4 //if process exists dont move onto next word
+CAL .stdbase_ContextSwitch
+RET
+
+.stdbase_Scal_Chdir
+LLOD R3 R3 R9
+STR .stdbase_OSVar_CWD R3
+RET
+
+.stdbase_Scal_Strlen
+ADD R8 R3 R9
+LOD R3 R8
+IMM R1 -1
+.stdbase_Scal_Strlen_Loop
+LOD R7 R3
+INC R3 R3
+INC R1 R1
+BNZ .stdbase_Scal_Strlen_Loop R7
+STR R8 R1
+RET
+
+.stdbase_Scal_Lodosvar
+LLOD R3 .stdbase_OSVar_CWD R3
+STR .stdbase_VirtualRegister R3
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Push
+RET
+
+.stdbase_Scal_Strosvar
+MOV R1 R3
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Pop
+LOD R3 .stdbase_VirtualRegister
+LSTR .stdbase_OSVar_CWD R1 R3
+RET
+
+.stdbase_Scal_NthString
+ADD R3 R3 R9
+PSH R3
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Pop
+LOD R2 .stdbase_VirtualRegister
+SUB R3 .stdbase_VirtualRegister R9
+PSH R2
+CAL .stdmem_Ins_Pop
+POP R2
+LOD R7 .stdbase_VirtualRegister
+POP R3
+LOD R1 R3
+BRZ .stdbase_Scal_NthString_Success R7
+.stdbase_Scal_NthString_Loop
+LOD R6 R1
+INC R1 R1
+BRZ .stdbase_Scal_NthString_Error R6
+BNE .stdbase_Scal_NthString_Loop R6 R7
+DEC R2 R2
+BNZ .stdbase_Scal_NthString_Loop R2
+.stdbase_Scal_NthString_Success
+STR R3 R1
+RET
+
+.stdbase_Scal_NthString_Error
+BRZ .stdbase_Scal_NthString_Success R7
+STR .stdbase_OSVar_ERROR 9
+RET
+
+.stdbase_Scal_Error
+STR .stdbase_OSVar_ERROR 6
+RET
+
+//HELPER FUNCTIONS
+
+.stdbase_END //final graceful exit routine
+IMM R1 .stdbase_OSVar_Restricted_EndingString
+CAL .stdio_PrintString //r1 = string address
+HLT
+
+//EXECUTIONSTUFF
+
+.stdbase_ContextSwitch
+MOV R10 R0
+LOD R7 R5
+BRZ .stdbase_ContextSwitch_LodNextProc R7
+LSTR R7 3 R4
+LOD R8 .stdbase_OSVar_SEEKOFFSET
+LSTR R7 4 R8
+LOD R8 .stdbase_OSVar_ERROR
+LSTR R7 6 R8
+//LOD next proc
+.stdbase_ContextSwitch_LodNextProc
+INC R5 R5
+LOD R7 R5
+BRE .stdbase_ContextSwitch_Restartprocloop R7 0
+.stdbase_ContextSwitch_Restartprocloop_Return
+LLOD R4 R7 3
+LLOD R8 R7 4
+STR .stdbase_OSVar_SEEKOFFSET R8
+LLOD R8 R7 6
+STR .stdbase_OSVar_ERROR R8
+ADD R9 R7 7
+RET
+
+.stdbase_ContextSwitch_Restartprocloop
+IMM R5 .stdbase_ProcessDescriptors
+LOD R7 R5
+BRZ .stdbase_END R7
+JMP .stdbase_ContextSwitch_Restartprocloop_Return
+
+.stdbase_CreateStartingProc
+SUB R3 .stdbase_VirtualRegister R9
+STR .stdbase_VirtualRegister 23
+CAL .stdmem_Scal_Malloc
+LOD R3 .stdbase_VirtualRegister
+STR .stdbase_ProcessDescriptors R3
+STR R3 R0 //set PID to 0
+LSTR R3 1 R4
+OUT %ADDR 6
+IN R5 %BUS
+ADD R5 R4 R5
+LSTR R3 2 R5
+LSTR R3 3 R4
+LSTR R3 4 R0
+LSTR R3 5 R0
+LSTR R3 6 R0
+ADD R9 R3 7 //R0
+IMM R5 .stdbase_ProcessDescriptors
+MOV R10 R0
+
+.stdbase_Exec_Loop
+OUT %ADDR R4
+IN R6 %BUS
+BSR R3 R6 12
+BSR R2 R6 8
+BSR R1 R6 4
+AND R2 R2 0xF
+AND R1 R1 0xF
+AND R6 R6 0xF
+ADD R6 R6 .stdbase_InstructionTable
+LOD R6 R6
+CAL R6
+INC R4 R4
+INC R10 R10
+STR R9 R0 //keep R0 as 0
+BLE .stdbase_Exec_Loop R10 255
+DEC R4 R4
+CAL .stdbase_ContextSwitch
+JMP .stdbase_Exec_Loop
+
+//STDIO
+//USES standard urcl serial console
+
+//DEFINES:
+//SCAL_PUTS
+//SCAL_PUTC
+//SCAL_PUTCI
+//SCAL_GETS
+//SCAL_GETC
+//SCAL_PRINTSTRING
+
+.stdio_Scal_Puts
+LLOD R1 R3 R9
+CAL .stdio_PrintString
+RET
+
+.stdio_Scal_Putc
+LLOD R3 R3 R9
+OUT %TEXT R3
+//OUT %HEX R3
+//OUT %TEXT 0x20
+RET
+
+.stdio_Scal_Putci
+INC R4 R4
+OUT %ADDR R4
+IN R3 %BUS
+OUT %TEXT R3
+RET
+
+.stdio_Scal_Gets //TODO: make non blocking
+LLOD R3 R3 R9
+PSH R3
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Pop
+LOD R2 .stdbase_VirtualRegister
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Pop
+LOD R6 .stdbase_VirtualRegister
+POP R3
+BRZ .stdio_Scal_Gets_End R2
+LOD R7 .stdbase_OSVar_ECHO
+.stdio_Scal_Gets_Loop
+IN R1 %TEXT
+BRE .stdio_Scal_Gets_End R1 R6
+BRZ ~+2 R7
+OUT %TEXT R1
+STR R3 R1
+INC R3 R3
+DEC R2 R2
+BNZ .stdio_Scal_Gets_Loop R2
+.stdio_Scal_Gets_End
+STR R3 R0
+RET
+
+.stdio_Scal_Getc //TODO: make non blocking
+IN R1 %TEXT
+LSTR R3 R9 R1
+RET
+
+.stdio_PrintString //r1 = string address
+LOD R2 R1
+BRZ .stdio_PrintString_Exit R2
+OUT %TEXT R2
+INC R1 R1
+JMP .stdio_PrintString
+.stdio_PrintString_Exit
+RET
+//SILKFS
+//STANDARD silk filesystem
+
+//DEFINES:
+//SCAL_CREAT
+//SCAL_OPEN
+//SCAL_CLOSE
+//SCAL_READ
+//SCAL_WRITE
+//SCAL_LSEEK
+//SCAL_RDIR
+//SCAL_GETDIRNAME
+//SCAL_FLEN
+
+
+.silkfs_FileDescriptors
 DW 0
 DW 0
 DW 0
@@ -190,276 +696,32 @@ DW 0
 DW 0
 DW 0
 DW -1
-//below is not file descriptor
-DW 0
-.ProcessDescriptors //pointers to them
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
-DW 0
 
-//Process descriptor format:
-//PID
-//Start of program
-//Name of program (string pointer)
-//Current read address
-//Seek value
-//Stack location
-//Error status
-//Registers (0-15)
-
-//Memory Block format:
-//@MSB = allocated?
-//Rest = length
-
-//File descriptor format:
-//Seek address
-//File header addr
-//Current Segment end
-//Remaining segments
-
-
-
-//INSTRUCTIONS
-//Op1 = R3
-//Op2 = R2
-//Op3 = R1
-//PC = R4
-//CurrentProc = R5
-//R6 = R8 = temp
-NOP //to silence URCX
-.Ins_Nop
-RET
-
-.Ins_Immediate
-INC R4 R4
-OUT %ADDR R4
-IN R6 %BUS
-LSTR R3 R9 R6
-RET
-
-.Ins_Add
-LLOD R2 R2 R9
-LLOD R1 R1 R9
-ADD R1 R2 R1
-LSTR R3 R9 R1
-RET
-
-.Ins_Subtract
-LLOD R2 R2 R9
-LLOD R1 R1 R9
-SUB R1 R2 R1
-LSTR R3 R9 R1
-RET
-
-.Ins_And
-LLOD R2 R2 R9
-LLOD R1 R1 R9
-AND R1 R1 R2
-LSTR R3 R9 R1
-RET
-
-.Ins_Nor
-LLOD R2 R2 R9
-LLOD R1 R1 R9
-NOR R1 R1 R2
-LSTR R3 R9 R1
-RET
-
-.Ins_ShiftLeft
-LLOD R2 R2 R9
-LLOD R1 R1 R9
-BSL R1 R2 R1
-LSTR R3 R9 R1
-RET
-
-.Ins_ShiftRight
-LLOD R2 R2 R9
-LLOD R1 R1 R9
-BSR R1 R2 R1
-LSTR R3 R9 R1
-RET
-
-.Ins_BranchIfGreaterThanOrEqual
-LLOD R2 R2 R9
-LLOD R1 R1 R9 
-BRL .Ins_BranchIfGreaterThanOrEqual_NoBranch R2 R1
-LLOD R3 R3 R9
-LOD R6 R5 //pd pointer
-LLOD R6 R6 1 //load start of program
-ADD R4 R6 R3 //branc
-DEC R4 R4
-.Ins_BranchIfGreaterThanOrEqual_NoBranch
-RET
-
-.Ins_BranchIfEqual
-LLOD R2 R2 R9
-LLOD R1 R1 R9
-BNE .Ins_BranchIfEqual_NoBranch R2 R1
-LLOD R3 R3 R9
-LOD R6 R5 //pd pointer
-LLOD R6 R6 1 //load start of program
-ADD R4 R6 R3 //branc
-DEC R4 R4
-.Ins_BranchIfEqual_NoBranch
-RET
-
-.Ins_LoadMemory
-LLOD R2 R2 R9
-ADD R3 R3 R9
-CPY R3 R2
-RET
-
-.Ins_StoreMemory
-LLOD R3 R3 R9
-ADD R2 R2 R9
-CPY R3 R2
-RET
-
-.Ins_Push
-LLOD R3 R3 R9
-LOD R6 R5
-LLOD R7 R6 5 //stack location
-BRZ .Ins_Push_CreateStack R7
-ADD R8 R7 64 //R8 = stack cap
-LLOD R6 R9 15
-BGE .Ins_Push_StackOverflow R6 R8
-BRL .Ins_Push_StackUnderflow R6 R7
-.Ins_Push_CreateStack_Ret
-INC R6 R6
-STR R6 R3
-LSTR R9 15 R6
-RET
-
-.Ins_Push_CreateStack
-STR .VirtualRegister 64
-PSH R3
-SUB R3 .VirtualRegister R9
-PSH R6
-CAL .Scal_Malloc
-POP R6
-POP R3
-LOD R7 .VirtualRegister //address
-DEC R7 R7
-LSTR R6 5 R7
-MOV R6 R7
-JMP .Ins_Push_CreateStack_Ret
-
-
-.Ins_Push_StackOverflow
-STR .OSVar_ERROR 10
-RET
-
-.Ins_Push_StackUnderflow
-STR .OSVar_ERROR 11
-RET
-
-.Ins_Pop
-LOD R6 R5
-LLOD R6 R6 5 //stack location
-BRZ .Ins_Push_StackUnderflow R6
-ADD R7 R6 64
-LLOD R8 R9 15
-BRG .Ins_Push_StackOverflow R8 R7
-BLE .Ins_Push_StackUnderflow R8 R6
-ADD R3 R3 R9
-CPY R3 R8
-DEC R8 R8
-LSTR R9 15 R8
-RET
-
-.Ins_BulkImmediate
-LLOD R3 R3 R9
-.Ins_BulkImmediate_Loop
-INC R4 R4
-OUT %ADDR R4
-IN R6 %BUS
-STR R3 R6
-INC R3 R3
-BNZ .Ins_BulkImmediate_Loop R6
-RET
-
-.Ins_SystemCall
-BSL R2 R2 4
-OR R1 R1 R2
-BRG .Ins_SystemCall_InvalidSyscall R1 37
-LLOD R1 R1 .SystemCalls
-CAL R1
-RET
-
-.Ins_SystemCall_InvalidSyscall
-STR .OSVar_ERROR 6
-RET
-
-//SYSTEM CALLS
-//R1 + R2 = temp
-//Operand = R3
-//PC = R4
-//CurrentProc = R5
-//R6 - R8 = temp
-
-.Scal_Exit
-LLOD R3 R3 R9 //exit code
-PSH R3
-LOD R3 R5
-DEC R3 R3
-CAL .Scal_Free_SkipGet
-LOD R3 R5
-LLOD R3 R3 5
-BRZ ~+2 R3
-CAL .Scal_Free_SkipGet
-POP R3
-STR .OSVar_EXIT R3
-DEC R5 R5
-LOD R1 R5 //the one before
-INC R5 R5
-BRZ .END R1
-LOD R1 .OSVar_Restricted_CurrentFinalProc
-DEC R1 R1
-STR .OSVar_Restricted_CurrentFinalProc R1
-INC R1 R1
-LOD R2 R1
-STR R5 R2 //puts last into current
-STR R1 0
-//IMM R5 .ProcessDescriptors
-CAL .ContextSwitch
-RET
-
-.Scal_Creat
+NOP //to silence urcx
+.silkfs_Scal_Creat
 LLOD R3 R3 R9 //pointer to name string
-//get length
+//GET length
 IMM R1 -2
 PSH R3
-.Scal_Creat_NameLoop
+.silkfs_Scal_Creat_NameLoop
 LOD R2 R3
 INC R3 R3
 INC R1 R1
-BNZ .Scal_Creat_NameLoop R2
+BNZ .silkfs_Scal_Creat_NameLoop R2
 BRP ~+2 R1
 MOV R1 R0 //in case someone trys to name a file "\0"
 ADD R3 R1 20
 PSH R4
-CAL .FindNextSpace
+CAL .silkfs_FindNextSpace
 MOV R3 R4
 POP R4
 ADD R3 R3 3
 OUT %ADDR R3
 IN R6 %BUS
 ADD R6 R6 R1
+OUT %ADDR R3
 OUT %BUS R6 //
-STR .OSVar_Restricted_Temp R6
+STR .stdbase_OSVar_Restricted_Temp R6
 DEC R3 R3
 OUT %ADDR R3
 OUT %BUS 16 //
@@ -473,31 +735,31 @@ LOD R8 R6
 ADD R7 R7 R8
 OUT %ADDR R3
 OUT %BUS R7 //
-STR .OSVar_Restricted_Temp2 R7
+STR .stdbase_OSVar_Restricted_Temp2 R7
 ADD R3 R3 4
 INC R6 R6
-.Scal_Creat_SetNameLoop
-BRZ .Scal_Creat_SetNameLoop_End R1
+.silkfs_Scal_Creat_SetNameLoop
+BRZ .silkfs_Scal_Creat_SetNameLoop_End R1
 LOD R8 R6
 OUT %ADDR R3
 OUT %BUS R8
 INC R6 R6
 INC R3 R3
 DEC R1 R1
-JMP .Scal_Creat_SetNameLoop
-.Scal_Creat_SetNameLoop_End
-//expand CWD and insert
+JMP .silkfs_Scal_Creat_SetNameLoop
+.silkfs_Scal_Creat_SetNameLoop_End
+//EXPAND CWD and insert
 IMM R7 0
-LOD R3 .OSVar_CWD
-.Scal_Creat_UpdateDirLoop
-//follow chain to find final block
+LOD R3 .stdbase_OSVar_CWD
+.silkfs_Scal_Creat_UpdateDirLoop
+//FOLLOW chain to find final block
 INC R3 R3
 OUT %ADDR R3
 IN R6 %BUS
 //  check for remaining block header bit
 BSR R6 R6 2
 //      false -> end loop
-BRZ .Scal_Creat_UpdateDirLoop_End R6
+BRZ .silkfs_Scal_Creat_UpdateDirLoop_End R6
 //      true -> go to end and get next header
 INC R3 R3
 OUT %ADDR R3
@@ -510,14 +772,14 @@ DEC R6 R6
 OUT %ADDR R6
 IN R3 %BUS
 INC R7 R7
-JMP .Scal_Creat_UpdateDirLoop
-.Scal_Creat_UpdateDirLoop_End
-//set header in final block to mark it as not being final
+JMP .silkfs_Scal_Creat_UpdateDirLoop
+.silkfs_Scal_Creat_UpdateDirLoop_End
+//SET header in final block to mark it as not being final
 IN R6 %BUS
 OR R6 R6 4
 OUT %BUS R6
-BNZ .Scal_Creat_NotFirst R7
-BRE .Scal_Creat_NotFirst R3 1
+BNZ .silkfs_Scal_Creat_NotFirst R7
+BRE .silkfs_Scal_Creat_NotFirst R3 1
 //  if block is first and addr != 0, subtract dir name length from addr (can be found from first thing in header)
 DEC R3 R3
 OUT %ADDR R3
@@ -529,16 +791,16 @@ OUT %ADDR R3
 IN R6 %BUS
 OR R6 R6 4
 OUT %BUS R6
-.Scal_Creat_NotFirst 
+.silkfs_Scal_Creat_NotFirst
 //FNS(9)
 PSH R3
 IMM R3 9
 PSH R4
-CAL .FindNextSpace
+CAL .silkfs_FindNextSpace
 MOV R8 R4
 POP R4
 POP R3
-//end of block = header
+//END of block = header
 ADD R3 R3 2 //points to starting addr
 OUT %ADDR R3
 IN R6 %BUS
@@ -549,25 +811,25 @@ ADD R6 R6 R7
 DEC R6 R6 //last word
 OUT %ADDR R6
 OUT %BUS R8
-//header[0] = '.'
+//HEADER[0] = '.'
 OUT %ADDR R8
 OUT %BUS '.'
-//header[1] = 0
+//HEADER[1] = 0
 INC R8 R8
 OUT %ADDR R8
 OUT %BUS 0
-//header[2] = 5
+//HEADER[2] = 5
 INC R8 R8
 OUT %ADDR R8
 OUT %BUS 5
-//header[3] = header+4
-INC R8 R8
-OUT %ADDR R8
-INC R8 R8
+//HEADER[3] = header+4
+INC R6 R8
+INC R8 R6
+OUT %ADDR R6
 OUT %BUS R8
-//header[4,5,6,7] = stuff from earlier
+//HEADER[4,5,6,7] = stuff from earlier
+LOD R6 .stdbase_OSVar_Restricted_Temp2
 OUT %ADDR R8
-LOD R6 .OSVar_Restricted_Temp2
 OUT %BUS R6
 INC R8 R8
 OUT %ADDR R8
@@ -576,42 +838,42 @@ INC R8 R8
 OUT %ADDR R8
 OUT %BUS 16
 INC R8 R8
+LOD R6 .stdbase_OSVar_Restricted_Temp
 OUT %ADDR R8
-LOD R6 .OSVar_Restricted_Temp
 OUT %BUS R6
-//header[8] = 0
+//HEADER[8] = 0
 INC R8 R8
 OUT %ADDR R8
 OUT %BUS 0
 RET
 
-.Scal_Open
+.silkfs_Scal_Open
 PSH R4
 PSH R3
 ADD R3 R3 R9
-PSH ~+3
-PSH R3
-JMP .Scal_Rdir_SkipSetup
-//find next fd
-IMM R1 .FileDescriptors
-.Scal_Open_Loop
+
+LOD R6 .stdbase_OSVar_CWD
+CAL .silkfs_Scal_Rdir_SkipSetup
+//FIND next fd
+IMM R1 .silkfs_FileDescriptors
+.silkfs_Scal_Open_Loop
 LOD R2 R1
 INC R1 R1
-BNZ .Scal_Open_Loop R2
-BRE .Scal_Open_Error R2 -1
+BNZ .silkfs_Scal_Open_Loop R2
+BRE .silkfs_Scal_Open_Error R2 -1
 DEC R1 R1
 POP R3
-SUB R2 R1 .FileDescriptors
+SUB R2 R1 .silkfs_FileDescriptors
 LSTR R3 R9 R2
-SUB R3 .VirtualRegister R9 
-STR .VirtualRegister 4
+SUB R3 .stdbase_VirtualRegister R9
+STR .stdbase_VirtualRegister 4
 PSH R1
-CAL .Scal_Malloc
+CAL .stdmem_Scal_Malloc
 POP R1
-LOD R4 .VirtualRegister
+LOD R4 .stdbase_VirtualRegister
 STR R1 R4
 MOV R1 R4
-LOD R3 .OSVar_Restricted_Temp
+LOD R3 .stdbase_OSVar_Restricted_Temp
 OUT %ADDR R3
 IN R4 %BUS //location
 STR R1 R4
@@ -631,15 +893,15 @@ LSTR R1 2 R2
 POP R4
 RET
 
-.Scal_Open_Error
-STR .OSVar_ERROR 12
+.silkfs_Scal_Open_Error
+STR .stdbase_OSVar_ERROR 12
 RET
 
-.Scal_Close
+.silkfs_Scal_Close
 LLOD R3 R3 R9
-ADD R3 R3 .FileDescriptors
+ADD R3 R3 .silkfs_FileDescriptors
 LOD R1 R3
-BRZ .Scal_Close_Error R1
+BRZ .silkfs_Scal_Close_Error R1
 DEC R1 R1
 LOD R2 R1
 AND R2 R2 @SMAX
@@ -648,73 +910,73 @@ INC R1 R1
 STR R3 R0
 RET
 
-.Scal_Close_Error
-STR .OSVar_ERROR 7
+.silkfs_Scal_Close_Error
+STR .stdbase_OSVar_ERROR 7
 RET
 
-.Scal_Read
+.silkfs_Scal_Read
 LLOD R3 R3 R9
 PSH R3
-ADD R3 R3 .FileDescriptors
+ADD R3 R3 .silkfs_FileDescriptors
 LOD R1 R3 //fd to read from
-SUB R3 .VirtualRegister R9 
+SUB R3 .stdbase_VirtualRegister R9
 PSH R1
-CAL .Ins_Pop
+CAL .stdmem_Ins_Pop
 POP R1
-LOD R7 .VirtualRegister //mem dest location
-SUB R3 .VirtualRegister R9 
+LOD R7 .stdbase_VirtualRegister //mem dest location
+SUB R3 .stdbase_VirtualRegister R9
 PSH R1
 PSH R7
-CAL .Ins_Pop
+CAL .stdmem_Ins_Pop
 POP R7
 POP R1
-LOD R6 .VirtualRegister //amount to read
-BRZ .Scal_Close_Error R1
+LOD R6 .stdbase_VirtualRegister //amount to read
+BRZ .silkfs_Scal_Close_Error R1
 POP R3
-BGE .Scal_Close_Error R3 16
-.Scal_Read_Big_Loop
+BGE .silkfs_Scal_Close_Error R3 16
+.silkfs_Scal_Read_Big_Loop
 LOD R2 R1 //seek addr
 LLOD R3 R1 2 //segment end
 LLOD R8 R1 3 //segments remaining?
 BRZ ~+2 R8
 DEC R3 R3
 ADD R8 R2 R6 //new seek address after
-BRG .Scal_Read_NoFullRead R8 R3 //too smol
-STR .OSVar_SEEKOFFSET R8
+BRG .silkfs_Scal_Read_NoFullRead R8 R3 //too smol
+STR .stdbase_OSVar_SEEKOFFSET R8
 STR R1 R8
 MOV R3 R8 //ending address
-STR .OSVar_Restricted_Temp R6
-//while (R2 <= R3) {
-.Scal_Read_Loop
+STR .stdbase_OSVar_Restricted_Temp R6
+//WHILE (R2 <= R3) {
+.silkfs_Scal_Read_Loop
 OUT %ADDR R2
 IN R8 %BUS
 STR R7 R8
 INC R7 R7
 INC R2 R2
-BRL .Scal_Read_Loop R2 R3
-LOD R3 .OSVar_Restricted_Temp
-BNE .Scal_Read_NextSegment R3 R6
-.Scal_Read_End
-LOD R3 .OSVar_Restricted_Temp
-STR .VirtualRegister R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Push
+BRL .silkfs_Scal_Read_Loop R2 R3
+LOD R3 .stdbase_OSVar_Restricted_Temp
+BNE .silkfs_Scal_Read_NextSegment R3 R6
+.silkfs_Scal_Read_End
+LOD R3 .stdbase_OSVar_Restricted_Temp
+STR .stdbase_VirtualRegister R3
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Push
 RET
 
-.Scal_Read_NoFullRead
+.silkfs_Scal_Read_NoFullRead
 STR R7 0
 INC R3 R3
 STR R1 R3
-STR .OSVar_SEEKOFFSET R3
+STR .stdbase_OSVar_SEEKOFFSET R3
 SUB R8 R3 R2
-STR .OSVar_Restricted_Temp R8
-BNZ .Scal_Read_Loop R8
+STR .stdbase_OSVar_Restricted_Temp R8
+BNZ .silkfs_Scal_Read_Loop R8
 ADD R6 R6 R3
-.Scal_Read_NextSegment
+.silkfs_Scal_Read_NextSegment
 LLOD R8 R1 3
-BRZ .Scal_Read_End R8
+BRZ .silkfs_Scal_Read_End R8
 SUB R6 R6 R3 //remaining
-STR .OSVar_Restricted_Temp R6
+STR .stdbase_OSVar_Restricted_Temp R6
 OUT %ADDR R2
 IN R2 %BUS //new header
 INC R2 R2
@@ -732,44 +994,44 @@ STR R1 R3 //new seek
 ADD R3 R3 R8
 DEC R3 R3
 LSTR R1 2 R3
-JMP .Scal_Read_Big_Loop
+JMP .silkfs_Scal_Read_Big_Loop
 
-.Scal_Write
+.silkfs_Scal_Write
 PSH R4
 //LOD DST
 LLOD R3 R3 R9
-ADD R3 R3 .FileDescriptors
+ADD R3 R3 .silkfs_FileDescriptors
 LOD R1 R3 //fd to read from
 //LOD SRC
-SUB R3 .VirtualRegister R9 
+SUB R3 .stdbase_VirtualRegister R9
 PSH R1
-CAL .Ins_Pop
+CAL .stdmem_Ins_Pop
 POP R1
-LOD R2 .VirtualRegister
+LOD R2 .stdbase_VirtualRegister
 //LOD AMOUNT
-SUB R3 .VirtualRegister R9 
+SUB R3 .stdbase_VirtualRegister R9
 PSH R1
 PSH R2
-CAL .Ins_Pop
+CAL .stdmem_Ins_Pop
 POP R2
 POP R1
-LOD R3 .VirtualRegister
-//PTR = DST.START
+LOD R3 .stdbase_VirtualRegister
+//PTR = DST.silkfs_START
 LLOD R4 R1 1
 ADD R7 R4 3
 OUT %ADDR R7
 IN R4 %BUS
-//IF SEEK + AMOUNT >= PTR + DST.LEN THEN1
-.Scal_Write_Next
+//IF SEEK + AMOUNT >= PTR + DST.silkfs_LEN THEN1
+.silkfs_Scal_Write_Next
 LOD R6 R1 //seek
 ADD R6 R6 R3
 DEC R7 R7
 OUT %ADDR R7
 IN R7 %BUS
 ADD R7 R4 R7
-STR .OSVar_Restricted_Temp 0
-BRL .Scal_Write_NoFrag R6 R7
-//  AMOUNT = DST.END - SEEK
+STR .stdbase_OSVar_Restricted_Temp 0
+BRL .silkfs_Scal_Write_NoFrag R6 R7
+//  AMOUNT = DST.silkfs_END - SEEK
 LLOD R6 R1 2
 LLOD R7 R1 3
 BRZ ~+2 R7
@@ -781,33 +1043,33 @@ SUB R8 R3 R6
 DEC R8 R8 //no idea why this is necessary
 MOV R3 R6
 INC R3 R3
-STR .OSVar_Restricted_Temp 1
+STR .stdbase_OSVar_Restricted_Temp 1
 //  CREATFRAG = TRUE
-.Scal_Write_NoFrag
+.silkfs_Scal_Write_NoFrag
 //PTR = SEEK
 //WHILE PTR < SEEK + AMOUNT
 LOD R4 R1
 ADD R7 R4 R3
-BGE .Scal_Write_AfterLoop R4 R7
-.Scal_Write_Loop
+BGE .silkfs_Scal_Write_AfterLoop R4 R7
+.silkfs_Scal_Write_Loop
 //  CPY PTR SRC
-OUT %ADDR R4
 LOD R6 R2
+OUT %ADDR R4
 OUT %BUS R6
 //  INC SRC SRC
 INC R2 R2
 //  INC PTR PTR
 INC R4 R4
-BRL .Scal_Write_Loop R4 R7
-.Scal_Write_AfterLoop
+BRL .silkfs_Scal_Write_Loop R4 R7
+.silkfs_Scal_Write_AfterLoop
 //LSEEK = PTR
 STR R1 R4
-LOD R6 .OSVar_Restricted_Temp //creatfrag
-BRZ .Scal_Write_End R6
+LOD R6 .stdbase_OSVar_Restricted_Temp //creatfrag
+BRZ .silkfs_Scal_Write_End R6
 //IF CREATFRAG
 //  IF frag exists
 LLOD R6 R1 3
-BRZ .Scal_Write_NoFragExists R6
+BRZ .silkfs_Scal_Write_NoFragExists R6
 OUT %ADDR R4
 IN R6 %BUS
 INC R6 R6
@@ -825,17 +1087,17 @@ ADD R7 R7 R6
 DEC R7 R7
 LSTR R1 2 R7
 STR R1 R6
-JMP .Scal_Write_FragExists_Return
+JMP .silkfs_Scal_Write_FragExists_Return
 //  ELSE
 //      UPDATE THE ORIGINAL HEADERS
-.Scal_Write_NoFragExists
+.silkfs_Scal_Write_NoFragExists
 LLOD R4 R1 1
 INC R4 R4
-.Scal_Write_CreatFrag_FindEnd
+.silkfs_Scal_Write_CreatFrag_FindEnd
 OUT %ADDR R4
 IN R3 %BUS
 BSR R3 R3 2
-BRZ .Scal_Write_CreatFrag_FindEnd_End R3
+BRZ .silkfs_Scal_Write_CreatFrag_FindEnd_End R3
 INC R4 R4
 OUT %ADDR R4
 IN R3 %BUS
@@ -847,12 +1109,12 @@ DEC R3 R3
 OUT %ADDR R3
 IN R4 %BUS
 INC R4 R4
-JMP .Scal_Write_CreatFrag_FindEnd
-.Scal_Write_CreatFrag_FindEnd_End
+JMP .silkfs_Scal_Write_CreatFrag_FindEnd
+.silkfs_Scal_Write_CreatFrag_FindEnd_End
 IN R3 %BUS //update dir header
 OR R3 R3 4
 OUT %BUS R3
-//update actual header
+//UPDATE actual header
 MOV R6 R4
 DEC R6 R6
 OUT %ADDR R6
@@ -863,7 +1125,7 @@ ADD R6 R6 3
 OUT %ADDR R6
 IN R6 %BUS
 SUB R6 R6 R3
-//2nd word of actual header
+//2ND word of actual header
 OUT %ADDR R6
 IN R3 %BUS
 OR R3 R3 4
@@ -886,7 +1148,7 @@ PSH R8
 PSH R6
 PSH R7
 PSH R2
-CAL .FindNextSpace
+CAL .silkfs_FindNextSpace
 POP R2
 POP R7
 POP R6
@@ -903,13 +1165,13 @@ INC R4 R4
 OUT %ADDR R4
 OUT %BUS 0
 INC R4 R4
-OUT %ADDR R4
 INC R8 R8
+OUT %ADDR R4
 OUT %BUS R8
 DEC R8 R8
-INC R4 R4
-OUT %ADDR R4
-INC R4 R4
+INC R3 R4
+INC R4 R3
+OUT %ADDR R3
 OUT %BUS R4
 //      SET FIRST WORD TO LAST WORD OF PREVIOUS
 OUT %ADDR R4
@@ -925,50 +1187,51 @@ LSTR R1 3 0
 ADD R6 R4 R8
 DEC R6 R6
 LSTR R1 2 R6
-.Scal_Write_FragExists_Return
+.silkfs_Scal_Write_FragExists_Return
 //  AMOUNT = REMAINING
 MOV R3 R8
-//  JUMP BACK TO .Scal_Write_NoFrag WITH REMAINING AS NEW AMOUNT, CREATFRAG AS FALSE
-STR .OSVar_Restricted_Temp 0
+//  JUMP BACK TO .silkfs_Scal_Write_NoFrag WITH REMAINING AS NEW AMOUNT, CREATFRAG AS FALSE
+STR .stdbase_OSVar_Restricted_Temp 0
 LLOD R4 R1 1
 ADD R7 R4 3
 LOD R4 R1
-JMP .Scal_Write_Next
-.Scal_Write_End
+JMP .silkfs_Scal_Write_Next
+.silkfs_Scal_Write_End
 POP R4
 RET
 
-.Scal_Lseek
+.silkfs_Scal_Lseek
 PSH R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Pop
-LOD R1 .VirtualRegister //file
-ADD R1 R1 .FileDescriptors
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Pop
+LOD R1 .stdbase_VirtualRegister //file
+ADD R1 R1 .silkfs_FileDescriptors
 LOD R1 R1
 LOD R2 R1
 POP R3
 ADD R3 R3 R9
 LOD R3 R3 //offset
 PSH R2
-//check if negative offset
-.Scal_Lseek_Loop
-LOD R2 SP
+//CHECK if negative offset
+.silkfs_Scal_Lseek_Loop
+POP R2
+PSH R2
 ADD R2 R2 R3
-//check if exceeds end of fragment
+//CHECK if exceeds end of fragment
 LLOD R3 R1 2
 LLOD R6 R1 3
 BRZ ~+2 R6
 DEC R3 R3
-BLE .Scal_Lseek_End R2 R3
-//check if remaining fragments
-BRZ .Scal_Lseek_EOF R6
-//get remaining amount
+BLE .silkfs_Scal_Lseek_End R2 R3
+//CHECK if remaining fragments
+BRZ .silkfs_Scal_Lseek_EOF R6
+//GET remaining amount
 SUB R2 R2 R3
-//go to next fragment if available
+//GO to next fragment if available
 INC R3 R3
 OUT %ADDR R3
 IN R3 %BUS
-//update fd
+//UPDATE fd
 LSTR R1 1 R3
 INC R3 R3
 OUT %ADDR R3
@@ -983,169 +1246,57 @@ OUT %ADDR R3
 IN R7 %BUS
 ADD R7 R7 R6
 LSTR R1 2 R7
-//next iteration
+//NEXT iteration
 MOV R3 R2
-JMP .Scal_Lseek_Loop
-.Scal_Lseek_End
+JMP .silkfs_Scal_Lseek_Loop
+.silkfs_Scal_Lseek_End
 STR R1 R2
-STR .OSVar_SEEKOFFSET R2
+STR .stdbase_OSVar_SEEKOFFSET R2
 POP R0
 RET
 
-.Scal_Lseek_EOF
+.silkfs_Scal_Lseek_EOF
 POP R0
-STR .OSVar_ERROR 14 //EOF error
+STR .stdbase_OSVar_ERROR 14 //EOF error
 //TODO: make this jump to the end of the file
 RET
 
-.Scal_Exec
-LLOD R4 R3 R9
-LOD R1 R5
-LSTR R1 1 R4 //update start of program
-DEC R4 R4
-RET
-
-.Scal_Fork
-PSH R3
-LOD R6 .OSVar_Restricted_NextPID
-LSTR R3 R9 R6
-INC R6 R6
-STR .OSVar_Restricted_NextPID R6
-SUB R3 .VirtualRegister R9 
-STR .VirtualRegister 23
-CAL .Scal_Malloc
-LOD R3 .VirtualRegister
-LOD R7 .OSVar_Restricted_CurrentFinalProc
-INC R7 R7
-STR .OSVar_Restricted_CurrentFinalProc R7
-STR R7 R3
-LOD R6 .OSVar_Restricted_NextPID
-DEC R6 R6
-STR R3 R6 //PID
-INC R3 R3 //+1
-LOD R1 R5
-INC R1 R1
-CPY R3 R1 //Start
-INC R3 R3 //+2
-STR R3 R0 //Name
-INC R3 R3 //+3
-STR R3 R4 //Read
-INC R3 R3 //+4
-ADD R1 R1 3
-CPY R3 R1 //Seek
-INC R1 R1
-INC R3 R3 //+5
-//Stack
-LOD R6 R1
-PSH R6
-STR R3 R0
-PSH R0
-BRZ .Scal_Fork_NoStack R6
-PSH R3
-PSH R1
-PSH R6
-SUB R3 .VirtualRegister R9 
-STR .VirtualRegister 64
-CAL .Scal_Malloc
-LOD R2 .VirtualRegister
-POP R6
-POP R1
-POP R3
-DEC R2 R2
-STR SP R2
-STR R3 R2
-IMM R8 64
-.Scal_Fork_Copy
-INC R2 R2
-INC R6 R6
-CPY R2 R6
-DEC R8 R8
-BNZ .Scal_Fork_Copy R8
-.Scal_Fork_NoStack
-INC R1 R1
-INC R3 R3 //+6
-CPY R3 R1 //Error
-INC R3 R3
-MOV R2 R0
-MOV R1 R9
-.Scal_Fork_UpdateLoop
-LOD R8 R1
-STR R3 R8
-INC R3 R3
-INC R1 R1
-INC R2 R2
-BRL .Scal_Fork_UpdateLoop R2 16
-POP R2
-POP R6
-DEC R3 R3
-SUB R8 R8 R6 //rebase sp
-ADD R8 R8 R2
-STR R3 R8
-POP R1
-SUB R3 R3 15
-LSTR R3 R1 R0
-RET
-
-
-.Scal_GetPID
-ADD R3 R3 R9
-LOD R1 R5
-CPY R3 R1 //haha I use that 1 cisc instruction noob
-RET
-
-.Scal_WaitPID
-LLOD R3 R3 R9
-IMM R2 .ProcessDescriptors
-.Scal_WaitPID_CheckForPIDLoop
-LOD R1 R2
-BRZ .Ins_Nop R1
-LOD R1 R1
-INC R2 R2
-BNE .Scal_WaitPID_CheckForPIDLoop R1 R3
-DEC R4 R4 //if process exists dont move onto next word
-CAL .ContextSwitch
-RET
-
-.Scal_Chdir
-LLOD R3 R3 R9
-STR .OSVar_CWD R3
-RET
-
-.Scal_Rdir
-STR .OSVar_Restricted_Temp2 R4
+.silkfs_Scal_Rdir
+STR .stdbase_OSVar_Restricted_Temp2 R4
 ADD R3 R3 R9
 PSH R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Pop
-LOD R6 .VirtualRegister //R6 = default dir
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Pop
+LOD R6 .stdbase_VirtualRegister //R6 = default dir
 BNE ~+2 R6 0xFFFF
-.Scal_Rdir_SkipSetup
-LOD R6 .OSVar_CWD
-LOD R3 SP
+LOD R6 .stdbase_OSVar_CWD
+POP R3
+.silkfs_Scal_Rdir_SkipSetup
+PSH R3
 LOD R3 R3
 LOD R1 R3
 PSH R0
-BRZ .Scal_Rdir_BadDir R1
+BRZ .silkfs_Scal_Rdir_BadDir R1
 POP R0
-BRE .Scal_Rdir_UseCWD R1 '.'
-BRE .Scal_Rdir_UseRoot R1 '/'
-JMP .Scal_Rdir_UseDefault
+BRE .silkfs_Scal_Rdir_UseCWD R1 '.'
+BRE .silkfs_Scal_Rdir_UseRoot R1 '/'
+JMP .silkfs_Scal_Rdir_UseDefault
 
-.Scal_Rdir_UseCWD
-LOD R2 .OSVar_CWD
+.silkfs_Scal_Rdir_UseCWD
+LOD R2 .stdbase_OSVar_CWD
 INC R3 R3
-JMP .Scal_Rdir_Start
+JMP .silkfs_Scal_Rdir_Start
 
-.Scal_Rdir_UseRoot
-LOD R2 .OSVar_ROOT
+.silkfs_Scal_Rdir_UseRoot
+LOD R2 .stdbase_OSVar_ROOT
 INC R3 R3
-JMP .Scal_Rdir_Start
+JMP .silkfs_Scal_Rdir_Start
 
-.Scal_Rdir_UseDefault
+.silkfs_Scal_Rdir_UseDefault
 MOV R2 R6
-.Scal_Rdir_Start
+.silkfs_Scal_Rdir_Start
 ADD R2 R2 3
-STR .OSVar_Restricted_Temp R2
+STR .stdbase_OSVar_Restricted_Temp R2
 OUT %ADDR R2
 IN R1 %BUS //dir start
 DEC R2 R2
@@ -1156,33 +1307,34 @@ DEC R4 R4
 SUB R2 R2 2
 LOD R1 R3
 INC R3 R3
-BRZ .Scal_Rdir_FullPathInstant R1
-BRE .Scal_Rdir_Start R1 '/'
+BRZ .silkfs_Scal_Rdir_FullPathInstant R1
+BRE .silkfs_Scal_Rdir_Start R1 '/'
 DEC R3 R3
 PSH R3
 PSH R0
-.Scal_Rdir_Loop
+.silkfs_Scal_Rdir_Loop
 POP R0
-LOD R3 SP
+POP R3
+PSH R3
 LOD R1 R3
 OUT %ADDR R2
 IN R6 %BUS
-BRZ .Scal_Rdir_BadDir R6
-BRE .Scal_Rdir_NextSeg R2 R4
+BRZ .silkfs_Scal_Rdir_BadDir R6
+BRE .silkfs_Scal_Rdir_NextSeg R2 R4
 ADD R2 R2 4
 AND R7 R6 0xFF
 PSH R0
-BNE .Scal_Rdir_Loop R7 R1
+BNE .silkfs_Scal_Rdir_Loop R7 R1
 INC R3 R3
 POP R0
 BSR R6 R6 8
 DEC R1 R2
+STR .stdbase_OSVar_Restricted_Temp R1
 OUT %ADDR R1
-STR .OSVar_Restricted_Temp R1
 IN R7 %BUS //file addr
 SUB R7 R7 R6
 PSH R7
-.Scal_Rdir_CheckDirLoop
+.silkfs_Scal_Rdir_CheckDirLoop
 LOD R1 R3
 SETE R7 R1 R0
 SETE R8 R1 '/'
@@ -1191,22 +1343,23 @@ SETE R8 R1 0x20 //damn you bram I spent like 15 minutes debugging this until I l
 OR R7 R7 R8 //if this == -1 then is end of current dir name
 SETE R8 R6 R0 //if this == -1 then is end of search dir name
 XNOR R7 R7 R8 //if are not equal then there is no match
-BRZ .Scal_Rdir_Loop R7
-BRZ .Scal_Rdir_FullPathFound R1
-BRE .Scal_Rdir_FullPathFound R1 0x20
-BRE .Scal_Rdir_DirectoryFound R1 '/'
-LOD R7 SP
+BRZ .silkfs_Scal_Rdir_Loop R7
+BRZ .silkfs_Scal_Rdir_FullPathFound R1
+BRE .silkfs_Scal_Rdir_FullPathFound R1 0x20
+BRE .silkfs_Scal_Rdir_DirectoryFound R1 '/'
+POP R7
+PSH R7
 OUT %ADDR R7
 IN R7 %BUS
-BNE .Scal_Rdir_Loop R1 R7
+BNE .silkfs_Scal_Rdir_Loop R1 R7
 POP R7
 INC R7 R7
 PSH R7
 INC R3 R3
 DEC R6 R6
-JMP .Scal_Rdir_CheckDirLoop
+JMP .silkfs_Scal_Rdir_CheckDirLoop
 
-.Scal_Rdir_NextSeg
+.silkfs_Scal_Rdir_NextSeg
 MOV R2 R6
 ADD R2 R2 2
 OUT %ADDR R2
@@ -1218,12 +1371,12 @@ ADD R4 R4 R3
 DEC R4 R4
 INC R2 R2
 PSH R0
-JMP .Scal_Rdir_Loop
+JMP .silkfs_Scal_Rdir_Loop
 
-.Scal_Rdir_DirectoryFound
+.silkfs_Scal_Rdir_DirectoryFound
 INC R3 R3
 LOD R1 R3
-BRZ .Scal_Rdir_FullPathFound R1 //if ends with a / because yeah people do that sometimes
+BRZ .silkfs_Scal_Rdir_FullPathFound R1 //if ends with a / because yeah people do that sometimes
 DEC R4 R2
 OUT %ADDR R4
 IN R2 %BUS
@@ -1236,268 +1389,38 @@ POP R0
 POP R0
 PSH R3
 PSH R0
-JMP .Scal_Rdir_Loop
+JMP .silkfs_Scal_Rdir_Loop
 
-.Scal_Rdir_FullPathFound
+.silkfs_Scal_Rdir_FullPathFound
 DEC R2 R2
 POP R0
 POP R0
 OUT %ADDR R2
 IN R2 %BUS
-.Scal_Rdir_FullPathInstant
+.silkfs_Scal_Rdir_FullPathInstant
 POP R3 //original R3
 STR R3 R2
-LOD R4 .OSVar_Restricted_Temp2
+LOD R4 .stdbase_OSVar_Restricted_Temp2
 RET
 
-.Scal_Rdir_BadDir
-STR .OSVar_ERROR 2
+.silkfs_Scal_Rdir_BadDir
+STR .stdbase_OSVar_ERROR 2
 POP R0
 POP R0
-LOD R4 .OSVar_Restricted_Temp2
+LOD R4 .stdbase_OSVar_Restricted_Temp2
 RET
 
-.Scal_Malloc
-ADD R3 R3 R9
+.silkfs_Scal_Getdirname
 PSH R3
-LOD R3 R3 //malloc size
-BGE .Scal_Malloc_InvalidOp R3 @SMAX
-LOD R1 .OSVar_MALLOCSADDR
-PSH R0
-.Scal_Malloc_Loop
-MOV R7 R1
-LOD R1 R1
-BRE .Scal_Malloc_EOM R1 @MAX
-AND R2 R1 @SMAX
-AND R6 R1 @MSB
-MOV R1 R7
-BRZ .Scal_Malloc_Attempt R6
-.Scal_Malloc_Attempt_Return
-ADD R1 R1 R2
-INC R1 R1
-JMP .Scal_Malloc_Loop
-
-.Scal_Malloc_Attempt
-BRL .Scal_Malloc_Checkformerge R2 R3
-OR R6 R3 @MSB
-STR R1 R6
-POP R0
-POP R6
-INC R1 R1
-STR R6 R1 //return address of yeah
-BRE .Scal_Malloc_Success R2 R3
-ADD R1 R1 R3
-SUB R2 R2 R3
-DEC R2 R2
-STR R1 R2
-INC R1 R1
-.Scal_Malloc_Success
-DEC R1 R1
-STR .OSVar_MALLOCSADDR R1
-RET
-
-.Scal_Malloc_Checkformerge
-MOV R7 R1
-ADD R1 R1 R2
-INC R1 R1
-LOD R6 R1
-BRN .Scal_Malloc_Loop R6
-ADD R2 R2 R6
-INC R2 R2
-BGE .Scal_Malloc_Loop R2 @SMAX //if combined are too big then don't merge
-MOV R1 R7
-STR R1 R2
-JMP .Scal_Malloc_Loop
-
-.Scal_Malloc_EOM
-POP R1
-BGE .Scal_Malloc_OOM R1 1
-INC R1 R1
-PSH R1
-IMM R1 M0
-JMP .Scal_Malloc_Loop
-
-.Scal_Malloc_OOM
-STR .OSVar_ERROR 4
-POP R0
-POP R0
-RET
-
-.Scal_Malloc_InvalidOp
-STR .OSVar_ERROR 3
-POP R0
-POP R0
-RET
-
-.Scal_Free
-LLOD R3 R3 R9
-DEC R3 R3
-.Scal_Free_SkipGet
-LOD R1 R3
-AND R1 R1 @SMAX
-STR R3 R1
-RET
-
-.Scal_Realloc
-ADD R3 R3 R9
-PSH R3
-LOD R3 R3 //size
-PSH R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Pop
-LOD R6 .VirtualRegister //address
-POP R3
-DEC R6 R6
-LOD R2 R6
-AND R2 R2 0x7FFF
-//if the new size is less than current size, then split
-BRG .Scal_Realloc_expand R3 R2
-SUB R2 R2 R3
-DEC R2 R2
-BRN .Scal_Realloc_end R2
-OR R3 R3 0x8000
-STR R6 R3
-ADD R6 R6 R3
-INC R6 R6
-STR R6 R2
-STR .OSVar_MALLOCSADDR R6
-JMP .Scal_Realloc_end
-//R7 = next part address
-.Scal_Realloc_expand
-ADD R7 R6 R2
-INC R7 R7
-LOD R8 R7
-BRN .Scal_Realloc_Remalloc R8
-SUB R1 R3 R2
-DEC R1 R1
-BRL .Scal_Realloc_Remalloc R8 R1
-OR R3 R3 0x8000
-STR R6 R3
-BRE .Scal_Realloc_end R8 R3
-ADD R7 R7 R1 //newaddr = nextaddr + R1 + 1
-INC R7 R7 
-STR .OSVar_MALLOCSADDR R7
-SUB R8 R8 R1 //newsize = prevsize - R1 - 1
-DEC R8 R8
-STR R7 R8
-.Scal_Realloc_end
-POP R3
-INC R6 R6
-STR R3 R6
-RET
-
-.Scal_Realloc_Remalloc
-PSH R6
-PSH R2
-STR .VirtualRegister R3
-SUB R3 .VirtualRegister R9 
-CAL .Scal_Malloc
-LOD R7 .VirtualRegister
-POP R2
-POP R6
-POP R3
-STR R3 R7
-//unalloc original (this should go after if I ever multithread the kernel but in this case it saves like 1 operation so)
-STR R6 R2
-//copy data
-INC R6 R6
-MOV R8 R7
-.Scal_Realloc_CopyLoop
-CPY R7 R6
-INC R7 R7
-INC R6 R6
-DEC R2 R2
-BNZ .Scal_Realloc_CopyLoop R2
-
-RET
-
-.Scal_Puts
-LLOD R1 R3 R9
-CAL .PrintString
-RET
-
-.Scal_Putc
-LLOD R3 R3 R9
-OUT %TEXT R3
-//OUT %HEX R3
-//OUT %TEXT 0x20
-RET
-
-.Scal_Putci
-INC R4 R4
-OUT %ADDR R4
-IN R3 %BUS
-OUT %TEXT R3
-RET
-
-.Scal_Gets //TODO: make non blocking
-LLOD R3 R3 R9
-PSH R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Pop
-LOD R2 .VirtualRegister
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Pop
-LOD R6 .VirtualRegister
-POP R3
-BRZ .Scal_Gets_End R2
-LOD R7 .OSVar_ECHO
-.Scal_Gets_Loop
-IN R1 %TEXT
-BRE .Scal_Gets_End R1 R6
-BRZ ~+2 R7
-OUT %TEXT R1
-STR R3 R1
-INC R3 R3
-DEC R2 R2
-BNZ .Scal_Gets_Loop R2
-.Scal_Gets_End
-STR R3 R0
-RET
-
-.Scal_Getc //TODO: make non blocking
-IN R1 %TEXT
-LSTR R3 R9 R1
-RET
-
-.Scal_Strlen
-ADD R8 R3 R9
-LOD R3 R8
-IMM R1 -1
-.Scal_Strlen_Loop
-LOD R7 R3
-INC R3 R3
-INC R1 R1
-BNZ .Scal_Strlen_Loop R7
-STR R8 R1
-RET
-
-.Scal_Lodosvar
-LLOD R3 .OSVar_CWD R3
-STR .VirtualRegister R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Push
-RET
-
-.Scal_Strosvar
-MOV R1 R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Pop
-LOD R3 .VirtualRegister
-LSTR .OSVar_CWD R1 R3
-RET
-
-.Scal_Getdirname
-PSH R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Pop
-LOD R2 .VirtualRegister //max length
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Pop
+LOD R2 .stdbase_VirtualRegister //max length
 DEC R2 R2
 POP R3
 ADD R3 R3 R9
 LOD R3 R3
-BRZ .Ins_Nop R2
-LOD R1 .OSVar_CWD
+BRZ .stdbase_Ins_Nop R2
+LOD R1 .stdbase_OSVar_CWD
 ADD R6 R1 3
 OUT %ADDR R6
 IN R6 %BUS
@@ -1509,10 +1432,10 @@ INC R3 R3
 STR R3 0
 DEC R2 R2
 BSR R1 R1 8
-BRZ .Ins_Nop R1
+BRZ .stdbase_Ins_Nop R1
 SUB R6 R6 R1 //start of name
-.Scal_Getdirname_Loop
-BRZ .Ins_Nop R2
+.silkfs_Scal_Getdirname_Loop
+BRZ .stdbase_Ins_Nop R2
 OUT %ADDR R6
 IN R8 %BUS
 STR R3 R8
@@ -1521,51 +1444,21 @@ DEC R1 R1
 INC R6 R6
 INC R3 R3
 STR R3 0
-BRZ .Ins_Nop R1
-BRZ .Ins_Nop R2
-JMP .Scal_Getdirname_Loop
-.Scal_Getdirname_End
+BRZ .stdbase_Ins_Nop R1
+BRZ .stdbase_Ins_Nop R2
+JMP .silkfs_Scal_Getdirname_Loop
+.silkfs_Scal_Getdirname_End
 RET
 
-.Scal_NthString
-ADD R3 R3 R9
-PSH R3
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Pop
-LOD R2 .VirtualRegister
-SUB R3 .VirtualRegister R9 
-PSH R2
-CAL .Ins_Pop
-POP R2
-LOD R7 .VirtualRegister
-POP R3
-LOD R1 R3
-BRZ .Scal_NthString_Success R7
-.Scal_NthString_Loop
-LOD R6 R1
-INC R1 R1
-BRZ .Scal_NthString_Error R6
-BNE .Scal_NthString_Loop R6 R7
-DEC R2 R2
-BNZ .Scal_NthString_Loop R2
-.Scal_NthString_Success
-STR R3 R1
-RET
-
-.Scal_NthString_Error
-BRZ .Scal_NthString_Success R7
-STR .OSVar_ERROR 9
-RET
-
-.Scal_Flen
+.silkfs_Scal_Flen
 LLOD R3 R3 R9 //me when pointer to a pointer to a pointer to a pointer
-ADD R3 R3 .FileDescriptors
+ADD R3 R3 .silkfs_FileDescriptors
 LOD R3 R3
-BRZ .Scal_Close_Error R3 //no open file
+BRZ .silkfs_Scal_Close_Error R3 //no open file
 LLOD R3 R3 1
 ADD R3 R3 2
 IMM R8 0
-.Scal_Flen_Loop
+.silkfs_Scal_Flen_Loop
 OUT %ADDR R3
 IN R6 %BUS //segment len
 ADD R8 R8 R6
@@ -1573,7 +1466,7 @@ DEC R3 R3
 OUT %ADDR R3
 IN R7 %BUS
 BSR R7 R7 2 //remaining segments
-BRZ .Scal_Flen_End R7
+BRZ .silkfs_Scal_Flen_End R7
 DEC R8 R8
 DEC R6 R6
 ADD R3 R3 2
@@ -1583,33 +1476,14 @@ ADD R7 R7 R6
 OUT %ADDR R7
 IN R6 %BUS //next segment header address
 ADD R3 R6 2
-JMP .Scal_Flen_Loop
-.Scal_Flen_End
-STR .VirtualRegister R8
-SUB R3 .VirtualRegister R9 
-CAL .Ins_Push
+JMP .silkfs_Scal_Flen_Loop
+.silkfs_Scal_Flen_End
+STR .stdbase_VirtualRegister R8
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Push
 RET
 
-.Scal_Error
-STR .OSVar_ERROR 6
-RET
-
-//HELPER FUNCTIONS
-.PrintString //r1 = string address
-LOD R2 R1
-BRZ .PrintString_Exit R2
-OUT %TEXT R2
-INC R1 R1
-JMP .PrintString
-.PrintString_Exit
-RET
-
-.END //final graceful exit routine
-IMM R1 .OSVar_Restricted_EndingString
-CAL .PrintString
-HLT
-
-.FindNextSpace
+.silkfs_FindNextSpace
 //R3 = amount of space
 //TODO: count FFFFs to avoid eventual death
 //TODO: merge blocks
@@ -1617,16 +1491,16 @@ HLT
 //R6, R7, R8 = temp
 IMM R4 0
 IMM R8 0
-.FNS_Loop
+.silkfs_FNS_Loop
 OUT %ADDR R4
 IN R6 %BUS
-BRZ .FNS_CheckBlock R6
-BNE .FNS_Allocated R6 0xFFFF
+BRZ .silkfs_FNS_CheckBlock R6
+BNE .silkfs_FNS_Allocated R6 0xFFFF
 INC R4 R4
-JMP .FNS_Loop
-.FNS_Allocated
+JMP .silkfs_FNS_Loop
+.silkfs_FNS_Allocated
 IMM R8 0
-//get next block location
+//GET next block location
 ADD R4 R4 2
 OUT %ADDR R4
 IN R6 %BUS
@@ -1634,51 +1508,51 @@ INC R4 R4
 OUT %ADDR R4
 IN R4 %BUS
 ADD R4 R4 R6
-JMP .FNS_Loop
-.FNS_CheckBlock
+JMP .silkfs_FNS_Loop
+.silkfs_FNS_CheckBlock
 ADD R4 R4 2
 OUT %ADDR R4
 IN R6 %BUS
-BRE .FNS_Error R6 0xFFFF
-BNZ .FNS_Merge R8
-.FNS_Merge_Ret
+BRE .silkfs_FNS_Error R6 0xFFFF
+BNZ .silkfs_FNS_Merge R8
+.silkfs_FNS_Merge_Ret
 ADD R7 R6 4 //total size
-BGE .FNS_Allocate R7 R3
-//not big enough
+BGE .silkfs_FNS_Allocate R7 R3
+//NOT big enough
 SUB R8 R4 2 //update thingy
 INC R4 R4
 OUT %ADDR R4
 IN R4 %BUS
 ADD R4 R4 R6
-JMP .FNS_Loop
-.FNS_Allocate
+JMP .silkfs_FNS_Loop
+.silkfs_FNS_Allocate
 SUB R7 R7 R3 //extra space that exists
 SUB R4 R4 2
 PSH R4
 ADD R4 R4 R3 //start of additional block
-BGE .FNS_Allocate_BigBlock R7 4
-BRZ .FNS_Allocate_EmptyBlock R7
+BGE .silkfs_FNS_Allocate_BigBlock R7 4
+BRZ .silkfs_FNS_Allocate_EmptyBlock R7
 OUT %ADDR R4
 OUT %BUS 0xFFFF
 INC R4 R4
 DEC R7 R7
 BNZ ~-4 R7
-.FNS_Allocate_EmptyBlock
+.silkfs_FNS_Allocate_EmptyBlock
 POP R4
 PSH R4
 ADD R4 R4 4
 SUB R3 R3 4
-BRZ .FNS_Allocate_End R3
+BRZ .silkfs_FNS_Allocate_End R3
 OUT %ADDR R4
 OUT %BUS 0
 INC R4 R4
 DEC R3 R3
 BNZ ~-4 R3
-.FNS_Allocate_End
+.silkfs_FNS_Allocate_End
 POP R4
 RET
 
-.FNS_Allocate_BigBlock
+.silkfs_FNS_Allocate_BigBlock
 SUB R7 R7 4
 OUT %ADDR R4
 OUT %BUS 0
@@ -1688,14 +1562,14 @@ OUT %BUS 0
 INC R4 R4
 OUT %ADDR R4
 OUT %BUS R7
-INC R4 R4
-OUT %ADDR R4
-INC R4 R4
+INC R7 R4
+INC R4 R7
+OUT %ADDR R7
 OUT %BUS R4
-JMP .FNS_Allocate_EmptyBlock
-.FNS_Merge
+JMP .silkfs_FNS_Allocate_EmptyBlock
+.silkfs_FNS_Merge
 //R8 block + R4 block
-//R4.len + R4.pos-R8.pos
+//R4.LEN + R4.silkfs_pos-R8.silkfs_pos
 OUT %ADDR R4
 IN R6 %BUS
 INC R4 R4
@@ -1710,80 +1584,252 @@ INC R6 R6
 DEC R4 R4
 OUT %ADDR R4
 OUT %BUS R6
-JMP .FNS_Merge_Ret
-.FNS_Error
-//this is very bad
+JMP .silkfs_FNS_Merge_Ret
+.silkfs_FNS_Error
+//THIS is very bad
 //TODO: add some actual stuff here
 HLT
+//STDMEM
+//NO virtual memory
 
-//EXECUTIONSTUFF
+//DEFINES:
+//INS_LOADMEMORY
+//INS_STOREMEMORY
+//INS_PUSH
+//INS_POP
+//INS_BULKIMMEDIATE
+//SCAL_MALLOC
+//SCAL_FREE
+//SCAL_FREE_SKIPGET
+//SCAL_REALLOC
 
-.ContextSwitch
-MOV R10 R0
-LOD R7 R5
-BRZ .ContextSwitch_LodNextProc R7
-LSTR R7 3 R4
-LOD R8 .OSVar_SEEKOFFSET
-LSTR R7 4 R8
-LOD R8 .OSVar_ERROR
-LSTR R7 6 R8
-//LOD next proc
-.ContextSwitch_LodNextProc
-INC R5 R5
-LOD R7 R5
-BRE .ContextSwitch_Restartprocloop R7 0
-.ContextSwitch_Restartprocloop_Return
-LLOD R4 R7 3
-LLOD R8 R7 4
-STR .OSVar_SEEKOFFSET R8
-LLOD R8 R7 6
-STR .OSVar_ERROR R8
-ADD R9 R7 7
+.stdmem_Ins_LoadMemory
+LLOD R2 R2 R9
+ADD R3 R3 R9
+CPY R3 R2
 RET
 
-.ContextSwitch_Restartprocloop
-IMM R5 .ProcessDescriptors
-LOD R7 R5
-BRZ .END R7
-JMP .ContextSwitch_Restartprocloop_Return
+.stdmem_Ins_StoreMemory
+LLOD R3 R3 R9
+ADD R2 R2 R9
+CPY R3 R2
+RET
 
-.CreateStartingProc
-SUB R3 .VirtualRegister R9 
-STR .VirtualRegister 23
-CAL .Scal_Malloc
-LOD R3 .VirtualRegister
-STR .ProcessDescriptors R3
-STR R3 R0 //set PID to 0
-LSTR R3 1 R4
-OUT %ADDR 6
-IN R5 %BUS
-ADD R5 R4 R5
-LSTR R3 2 R5
-LSTR R3 3 R4
-LSTR R3 4 R0
-LSTR R3 5 R0
-LSTR R3 6 R0
-ADD R9 R3 7 //R0
-IMM R5 .ProcessDescriptors
-MOV R10 R0
 
-.Exec_Loop
+.stdmem_Ins_Push
+LLOD R3 R3 R9
+LOD R6 R5
+LLOD R7 R6 5 //stack location
+BRZ .stdmem_Ins_Push_CreateStack R7
+ADD R8 R7 64 //R8 = stack cap
+LLOD R6 R9 15
+BGE .stdmem_Ins_Push_StackOverflow R6 R8
+BRL .stdmem_Ins_Push_StackUnderflow R6 R7
+.stdmem_Ins_Push_CreateStack_Ret
+INC R6 R6
+STR R6 R3
+LSTR R9 15 R6
+RET
+
+.stdmem_Ins_Push_CreateStack
+STR .stdbase_VirtualRegister 64
+PSH R3
+SUB R3 .stdbase_VirtualRegister R9
+PSH R6
+CAL .stdmem_Scal_Malloc
+POP R6
+POP R3
+LOD R7 .stdbase_VirtualRegister //address
+DEC R7 R7
+LSTR R6 5 R7
+MOV R6 R7
+JMP .stdmem_Ins_Push_CreateStack_Ret
+
+
+.stdmem_Ins_Push_StackOverflow
+STR .stdbase_OSVar_ERROR 10
+RET
+
+.stdmem_Ins_Push_StackUnderflow
+STR .stdbase_OSVar_ERROR 11
+RET
+
+.stdmem_Ins_Pop
+LOD R6 R5
+LLOD R6 R6 5 //stack location
+BRZ .stdmem_Ins_Push_StackUnderflow R6
+ADD R7 R6 64
+LLOD R8 R9 15
+BRG .stdmem_Ins_Push_StackOverflow R8 R7
+BLE .stdmem_Ins_Push_StackUnderflow R8 R6
+ADD R3 R3 R9
+CPY R3 R8
+DEC R8 R8
+LSTR R9 15 R8
+RET
+
+.stdmem_Ins_BulkImmediate
+LLOD R3 R3 R9
+.stdmem_Ins_BulkImmediate_Loop
+INC R4 R4
 OUT %ADDR R4
 IN R6 %BUS
-BSR R3 R6 12
-BSR R2 R6 8
-BSR R1 R6 4
-AND R2 R2 0xF
-AND R1 R1 0xF
-AND R6 R6 0xF
-ADD R6 R6 .InstructionTable
-LOD R6 R6
-CAL R6
-INC R4 R4
-INC R10 R10
-STR R9 R0 //keep R0 as 0
-BLE .Exec_Loop R10 255
-DEC R4 R4
-CAL .ContextSwitch
-JMP .Exec_Loop
+STR R3 R6
+INC R3 R3
+BNZ .stdmem_Ins_BulkImmediate_Loop R6
+RET
+
+.stdmem_Scal_Malloc
+ADD R3 R3 R9
+PSH R3
+LOD R3 R3 //malloc size
+BGE .stdmem_Scal_Malloc_InvalidOp R3 @SMAX
+LOD R1 .stdbase_OSVar_MALLOCSADDR
+PSH R0
+.stdmem_Scal_Malloc_Loop
+MOV R7 R1
+LOD R1 R1
+BRE .stdmem_Scal_Malloc_EOM R1 @MAX
+AND R2 R1 @SMAX
+AND R6 R1 @MSB
+MOV R1 R7
+BRZ .stdmem_Scal_Malloc_Attempt R6
+.stdmem_Scal_Malloc_Attempt_Return
+ADD R1 R1 R2
+INC R1 R1
+JMP .stdmem_Scal_Malloc_Loop
+
+.stdmem_Scal_Malloc_Attempt
+BRL .stdmem_Scal_Malloc_Checkformerge R2 R3
+OR R6 R3 @MSB
+STR R1 R6
+POP R0
+POP R6
+INC R1 R1
+STR R6 R1 //return address of yeah
+BRE .stdmem_Scal_Malloc_Success R2 R3
+ADD R1 R1 R3
+SUB R2 R2 R3
+DEC R2 R2
+STR R1 R2
+INC R1 R1
+.stdmem_Scal_Malloc_Success
+DEC R1 R1
+STR .stdbase_OSVar_MALLOCSADDR R1
+RET
+
+.stdmem_Scal_Malloc_Checkformerge
+MOV R7 R1
+ADD R1 R1 R2
+INC R1 R1
+LOD R6 R1
+BRN .stdmem_Scal_Malloc_Loop R6
+ADD R2 R2 R6
+INC R2 R2
+BGE .stdmem_Scal_Malloc_Loop R2 @SMAX //if combined are too big then don't merge
+MOV R1 R7
+STR R1 R2
+JMP .stdmem_Scal_Malloc_Loop
+
+.stdmem_Scal_Malloc_EOM
+POP R1
+BGE .stdmem_Scal_Malloc_OOM R1 1
+INC R1 R1
+PSH R1
+IMM R1 M0
+JMP .stdmem_Scal_Malloc_Loop
+
+.stdmem_Scal_Malloc_OOM
+STR .stdbase_OSVar_ERROR 4
+POP R0
+POP R0
+RET
+
+.stdmem_Scal_Malloc_InvalidOp
+STR .stdbase_OSVar_ERROR 3
+POP R0
+POP R0
+RET
+
+.stdmem_Scal_Free
+LLOD R3 R3 R9
+DEC R3 R3
+.stdmem_Scal_Free_SkipGet
+LOD R1 R3
+AND R1 R1 @SMAX
+STR R3 R1
+RET
+
+.stdmem_Scal_Realloc
+ADD R3 R3 R9
+PSH R3
+LOD R3 R3 //size
+PSH R3
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Ins_Pop
+LOD R6 .stdbase_VirtualRegister //address
+POP R3
+DEC R6 R6
+LOD R2 R6
+AND R2 R2 0x7FFF
+//IF the new size is less than current size, then split
+BRG .stdmem_Scal_Realloc_expand R3 R2
+SUB R2 R2 R3
+DEC R2 R2
+BRN .stdmem_Scal_Realloc_end R2
+OR R3 R3 0x8000
+STR R6 R3
+ADD R6 R6 R3
+INC R6 R6
+STR R6 R2
+STR .stdbase_OSVar_MALLOCSADDR R6
+JMP .stdmem_Scal_Realloc_end
+//R7 = next part address
+.stdmem_Scal_Realloc_expand
+ADD R7 R6 R2
+INC R7 R7
+LOD R8 R7
+BRN .stdmem_Scal_Realloc_Remalloc R8
+SUB R1 R3 R2
+DEC R1 R1
+BRL .stdmem_Scal_Realloc_Remalloc R8 R1
+OR R3 R3 0x8000
+STR R6 R3
+BRE .stdmem_Scal_Realloc_end R8 R3
+ADD R7 R7 R1 //newaddr = nextaddr + R1 + 1
+INC R7 R7
+STR .stdbase_OSVar_MALLOCSADDR R7
+SUB R8 R8 R1 //newsize = prevsize - R1 - 1
+DEC R8 R8
+STR R7 R8
+.stdmem_Scal_Realloc_end
+POP R3
+INC R6 R6
+STR R3 R6
+RET
+
+.stdmem_Scal_Realloc_Remalloc
+PSH R6
+PSH R2
+STR .stdbase_VirtualRegister R3
+SUB R3 .stdbase_VirtualRegister R9
+CAL .stdmem_Scal_Malloc
+LOD R7 .stdbase_VirtualRegister
+POP R2
+POP R6
+POP R3
+STR R3 R7
+//UNALLOC original (this should go after if I ever multithread the kernel but in this case it saves like 1 operation so)
+STR R6 R2
+//COPY data
+INC R6 R6
+MOV R8 R7
+.stdmem_Scal_Realloc_CopyLoop
+CPY R7 R6
+INC R7 R7
+INC R6 R6
+DEC R2 R2
+BNZ .stdmem_Scal_Realloc_CopyLoop R2
+
+RET
 

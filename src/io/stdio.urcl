@@ -1,0 +1,74 @@
+//STDIO
+//Uses standard urcl serial console
+
+//Defines:
+//Scal_Puts
+//Scal_Putc
+//Scal_Putci
+//Scal_Gets
+//Scal_Getc
+//Scal_PrintString
+
+!Scal_Puts
+.Scal_Puts
+LLOD R1 R3 R9
+CAL .PrintString
+RET
+
+!Scal_Putc
+.Scal_Putc
+LLOD R3 R3 R9
+OUT %TEXT R3
+//OUT %HEX R3
+//OUT %TEXT 0x20
+RET
+
+!Scal_Putci
+.Scal_Putci
+INC R4 R4
+OUT %ADDR R4
+IN R3 %BUS
+OUT %TEXT R3
+RET
+
+!Scal_Gets
+.Scal_Gets //TODO: make non blocking
+LLOD R3 R3 R9
+PSH R3
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R2 !VirtualRegister
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R6 !VirtualRegister
+POP R3
+BRZ .Scal_Gets_End R2
+LOD R7 !OSVar_ECHO
+.Scal_Gets_Loop
+IN R1 %TEXT
+BRE .Scal_Gets_End R1 R6
+BRZ ~+2 R7
+OUT %TEXT R1
+STR R3 R1
+INC R3 R3
+DEC R2 R2
+BNZ .Scal_Gets_Loop R2
+.Scal_Gets_End
+STR R3 R0
+RET
+
+!Scal_Getc
+.Scal_Getc //TODO: make non blocking
+IN R1 %TEXT
+LSTR R3 R9 R1
+RET
+
+!PrintString
+.PrintString //r1 = string address
+LOD R2 R1
+BRZ .PrintString_Exit R2
+OUT %TEXT R2
+INC R1 R1
+JMP .PrintString
+.PrintString_Exit
+RET

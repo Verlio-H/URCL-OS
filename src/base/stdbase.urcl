@@ -1,0 +1,558 @@
+.InstructionTable
+DW .Ins_Nop
+DW .Ins_Immediate // 1
+DW .Ins_Add // 2
+DW .Ins_Subtract // 3
+DW .Ins_And // 4
+DW .Ins_Nor // 5
+DW .Ins_ShiftLeft // 6
+DW .Ins_ShiftRight // 7
+DW .Ins_BranchIfGreaterThanOrEqual // 8
+DW .Ins_BranchIfEqual // 9
+DW !Ins_LoadMemory // 10
+DW !Ins_StoreMemory // 11
+DW !Ins_Push // 12
+DW !Ins_Pop // 13
+DW !Ins_BulkImmediate //14
+DW .Ins_SystemCall //15
+
+.SystemCalls
+DW .Scal_Exit //0
+DW !Scal_Creat //1
+DW !Scal_Open //2
+DW !Scal_Close //3
+DW !Scal_Read //4
+DW !Scal_Write //5
+DW !Scal_Lseek //6
+DW .Scal_Error //.Scal_Link //7
+DW .Scal_Error //.Scal_Unlink //8
+DW .Scal_Error //.Scal_Stat //9
+DW .Scal_Exec //10
+DW .Scal_Fork //11
+DW .Scal_GetPID //12
+DW .Scal_WaitPID //13
+ DW .Scal_Error//DW .Scal_Kill //14
+DW .Scal_Chdir // //15
+DW .Scal_Error //.Scal_Stime //16
+DW .Scal_Error //.Scal_time //17
+DW !Scal_Rdir //18
+DW !Scal_Malloc //19
+DW !Scal_Free //20
+DW !Scal_Realloc //21
+DW !Scal_Puts //22
+DW !Scal_Putc //23
+DW !Scal_Putci //24
+DW !Scal_Gets //25
+DW !Scal_Getc //26
+DW .Scal_Error //.Scal_Memcmp //27
+DW .Scal_Error //.Scal_Memcpy //28
+DW .Scal_Error //.Scal_Rand //29
+DW .Scal_Error //.Scal_Strcmp //30
+DW .Scal_Error //.Scal_Strcpy //31
+DW .Scal_Strlen //32
+DW .Scal_Lodosvar //33
+DW .Scal_Strosvar //34
+DW !Scal_Getdirname //35
+DW .Scal_NthString //36
+DW !Scal_Flen //37
+//OSVariables:
+!OSVar_CWD
+.OSVar_CWD
+DW 0 //CWD
+!OSVar_ROOT
+.OSVar_ROOT
+DW 0
+.OSVar_PATH
+DW 0 //configured on startup (/bin)
+.OSVar_SHELL
+DW 0 //configured on startup (/bin/sh)
+!OSVar_ECHO
+.OSVar_ECHO
+DW 1
+.OSVar_MEMLIMIT
+//DW @HEAP
+DW @MINHEAP //use this on bad emu that no have @HEAP (I am looking at you bram)
+.OSVar_BITS
+DW @BITS
+.OSVar_MEM0
+DW M0
+!OSVar_MALLOCSADDR
+.OSVar_MALLOCSADDR
+DW M0
+.OSVar_USERNAME
+DW @MAX //configured on startup
+!OSVar_SEEKOFFSET
+.OSVar_SEEKOFFSET
+DW 0
+.OSVar_CPP
+DW 0
+.OSVar_PROCNAME
+DW 0 //write only
+.OSVar_EXIT
+DW 0
+!OSVar_STARTUPPROG
+.OSVar_STARTUPPROG
+DW 0
+!OSVar_ERROR
+.OSVar_ERROR
+DW 0
+
+//0 = successful
+//1 = other
+//2 = invalid directory
+//3 = invalid operand
+//4 = out of memory
+//5 = out of disk space
+//6 = invalid systemcall
+//7 = invalid fd
+//8 = invalid pid
+//9 = substring not found
+//10 = stack overflow
+//11 = stack underflow
+//12 = too many open files
+//13 = invalid lseek offset
+//14 = EOF
+
+.OSVar_Restricted_EndingString
+DW [10 "halting..." 10 0]
+.OSVar_Restricted_CurrentFinalProc
+DW .ProcessDescriptors
+.OSVar_Restricted_NextPID
+DW 1
+!OSVar_Restricted_Temp
+.OSVar_Restricted_Temp
+DW 0
+!OSVar_Restricted_Temp2
+.OSVar_Restricted_Temp2
+DW 0
+
+!VirtualRegister
+.VirtualRegister
+DW 0
+
+DW 0
+.ProcessDescriptors //pointers to them
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+
+//Process descriptor format:
+//PID
+//Start of program
+//Name of program (string pointer)
+//Current read address
+//Seek value
+//Stack location
+//Error status
+//Registers (0-15)
+
+//Memory Block format:
+//@MSB = allocated?
+//Rest = length
+
+//File descriptor format:
+//Seek address
+//File header addr
+//Current Segment end
+//Remaining segments
+
+
+
+//INSTRUCTIONS
+//Op1 = R3
+//Op2 = R2
+//Op3 = R1
+//PC = R4
+//CurrentProc = R5
+//R6 = R8 = temp
+NOP //to silence URCX
+!Ins_Nop
+.Ins_Nop
+RET
+
+.Ins_Immediate
+INC R4 R4
+OUT %ADDR R4
+IN R6 %BUS
+LSTR R3 R9 R6
+RET
+
+.Ins_Add
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+ADD R1 R2 R1
+LSTR R3 R9 R1
+RET
+
+.Ins_Subtract
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+SUB R1 R2 R1
+LSTR R3 R9 R1
+RET
+
+.Ins_And
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+AND R1 R1 R2
+LSTR R3 R9 R1
+RET
+
+.Ins_Nor
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+NOR R1 R1 R2
+LSTR R3 R9 R1
+RET
+
+.Ins_ShiftLeft
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+BSL R1 R2 R1
+LSTR R3 R9 R1
+RET
+
+.Ins_ShiftRight
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+BSR R1 R2 R1
+LSTR R3 R9 R1
+RET
+
+.Ins_BranchIfGreaterThanOrEqual
+LLOD R2 R2 R9
+LLOD R1 R1 R9 
+BRL .Ins_BranchIfGreaterThanOrEqual_NoBranch R2 R1
+LLOD R3 R3 R9
+LOD R6 R5 //pd pointer
+LLOD R6 R6 1 //load start of program
+ADD R4 R6 R3 //branc
+DEC R4 R4
+.Ins_BranchIfGreaterThanOrEqual_NoBranch
+RET
+
+.Ins_BranchIfEqual
+LLOD R2 R2 R9
+LLOD R1 R1 R9
+BNE .Ins_BranchIfEqual_NoBranch R2 R1
+LLOD R3 R3 R9
+LOD R6 R5 //pd pointer
+LLOD R6 R6 1 //load start of program
+ADD R4 R6 R3 //branc
+DEC R4 R4
+.Ins_BranchIfEqual_NoBranch
+RET
+
+.Ins_SystemCall
+BSL R2 R2 4
+OR R1 R1 R2
+BRG .Ins_SystemCall_InvalidSyscall R1 37
+LLOD R1 R1 .SystemCalls
+CAL R1
+RET
+
+.Ins_SystemCall_InvalidSyscall
+STR .OSVar_ERROR 6
+RET
+
+//SYSTEM CALLS
+//R1 + R2 = temp
+//Operand = R3
+//PC = R4
+//CurrentProc = R5
+//R6 - R8 = temp
+
+.Scal_Exit
+LLOD R3 R3 R9 //exit code
+PSH R3
+LOD R3 R5
+DEC R3 R3
+CAL !Scal_Free_SkipGet
+LOD R3 R5
+LLOD R3 R3 5
+BRZ ~+2 R3
+CAL !Scal_Free_SkipGet
+POP R3
+STR .OSVar_EXIT R3
+DEC R5 R5
+LOD R1 R5 //the one before
+INC R5 R5
+BRZ .END R1
+LOD R1 .OSVar_Restricted_CurrentFinalProc
+DEC R1 R1
+STR .OSVar_Restricted_CurrentFinalProc R1
+INC R1 R1
+LOD R2 R1
+STR R5 R2 //puts last into current
+STR R1 0
+//IMM R5 .ProcessDescriptors
+CAL .ContextSwitch
+RET
+
+.Scal_Exec
+LLOD R4 R3 R9
+LOD R1 R5
+LSTR R1 1 R4 //update start of program
+DEC R4 R4
+RET
+
+.Scal_Fork
+PSH R3
+LOD R6 .OSVar_Restricted_NextPID
+LSTR R3 R9 R6
+INC R6 R6
+STR .OSVar_Restricted_NextPID R6
+SUB R3 .VirtualRegister R9 
+STR .VirtualRegister 23
+CAL !Scal_Malloc
+LOD R3 .VirtualRegister
+LOD R7 .OSVar_Restricted_CurrentFinalProc
+INC R7 R7
+STR .OSVar_Restricted_CurrentFinalProc R7
+STR R7 R3
+LOD R6 .OSVar_Restricted_NextPID
+DEC R6 R6
+STR R3 R6 //PID
+INC R3 R3 //+1
+LOD R1 R5
+INC R1 R1
+CPY R3 R1 //Start
+INC R3 R3 //+2
+STR R3 R0 //Name
+INC R3 R3 //+3
+STR R3 R4 //Read
+INC R3 R3 //+4
+ADD R1 R1 3
+CPY R3 R1 //Seek
+INC R1 R1
+INC R3 R3 //+5
+//Stack
+LOD R6 R1
+PSH R6
+STR R3 R0
+PSH R0
+BRZ .Scal_Fork_NoStack R6
+PSH R3
+PSH R1
+PSH R6
+SUB R3 .VirtualRegister R9 
+STR .VirtualRegister 64
+CAL !Scal_Malloc
+LOD R2 .VirtualRegister
+POP R6
+POP R1
+POP R3
+DEC R2 R2
+POP R0
+PSH R2
+STR R3 R2
+IMM R8 64
+.Scal_Fork_Copy
+INC R2 R2
+INC R6 R6
+CPY R2 R6
+DEC R8 R8
+BNZ .Scal_Fork_Copy R8
+.Scal_Fork_NoStack
+INC R1 R1
+INC R3 R3 //+6
+CPY R3 R1 //Error
+INC R3 R3
+MOV R2 R0
+MOV R1 R9
+.Scal_Fork_UpdateLoop
+LOD R8 R1
+STR R3 R8
+INC R3 R3
+INC R1 R1
+INC R2 R2
+BRL .Scal_Fork_UpdateLoop R2 16
+POP R2
+POP R6
+DEC R3 R3
+SUB R8 R8 R6 //rebase sp
+ADD R8 R8 R2
+STR R3 R8
+POP R1
+SUB R3 R3 15
+LSTR R3 R1 R0
+RET
+
+
+.Scal_GetPID
+ADD R3 R3 R9
+LOD R1 R5
+CPY R3 R1 //haha I use that 1 cisc instruction noob
+RET
+
+.Scal_WaitPID
+LLOD R3 R3 R9
+IMM R2 .ProcessDescriptors
+.Scal_WaitPID_CheckForPIDLoop
+LOD R1 R2
+BRZ .Ins_Nop R1
+LOD R1 R1
+INC R2 R2
+BNE .Scal_WaitPID_CheckForPIDLoop R1 R3
+DEC R4 R4 //if process exists dont move onto next word
+CAL .ContextSwitch
+RET
+
+.Scal_Chdir
+LLOD R3 R3 R9
+STR .OSVar_CWD R3
+RET
+
+.Scal_Strlen
+ADD R8 R3 R9
+LOD R3 R8
+IMM R1 -1
+.Scal_Strlen_Loop
+LOD R7 R3
+INC R3 R3
+INC R1 R1
+BNZ .Scal_Strlen_Loop R7
+STR R8 R1
+RET
+
+.Scal_Lodosvar
+LLOD R3 .OSVar_CWD R3
+STR .VirtualRegister R3
+SUB R3 .VirtualRegister R9 
+CAL !Ins_Push
+RET
+
+.Scal_Strosvar
+MOV R1 R3
+SUB R3 .VirtualRegister R9 
+CAL !Ins_Pop
+LOD R3 .VirtualRegister
+LSTR .OSVar_CWD R1 R3
+RET
+
+.Scal_NthString
+ADD R3 R3 R9
+PSH R3
+SUB R3 .VirtualRegister R9 
+CAL !Ins_Pop
+LOD R2 .VirtualRegister
+SUB R3 .VirtualRegister R9 
+PSH R2
+CAL !Ins_Pop
+POP R2
+LOD R7 .VirtualRegister
+POP R3
+LOD R1 R3
+BRZ .Scal_NthString_Success R7
+.Scal_NthString_Loop
+LOD R6 R1
+INC R1 R1
+BRZ .Scal_NthString_Error R6
+BNE .Scal_NthString_Loop R6 R7
+DEC R2 R2
+BNZ .Scal_NthString_Loop R2
+.Scal_NthString_Success
+STR R3 R1
+RET
+
+.Scal_NthString_Error
+BRZ .Scal_NthString_Success R7
+STR .OSVar_ERROR 9
+RET
+
+.Scal_Error
+STR .OSVar_ERROR 6
+RET
+
+//HELPER FUNCTIONS
+
+.END //final graceful exit routine
+IMM R1 .OSVar_Restricted_EndingString
+CAL !PrintString
+HLT
+
+//EXECUTIONSTUFF
+
+.ContextSwitch
+MOV R10 R0
+LOD R7 R5
+BRZ .ContextSwitch_LodNextProc R7
+LSTR R7 3 R4
+LOD R8 .OSVar_SEEKOFFSET
+LSTR R7 4 R8
+LOD R8 .OSVar_ERROR
+LSTR R7 6 R8
+//LOD next proc
+.ContextSwitch_LodNextProc
+INC R5 R5
+LOD R7 R5
+BRE .ContextSwitch_Restartprocloop R7 0
+.ContextSwitch_Restartprocloop_Return
+LLOD R4 R7 3
+LLOD R8 R7 4
+STR .OSVar_SEEKOFFSET R8
+LLOD R8 R7 6
+STR .OSVar_ERROR R8
+ADD R9 R7 7
+RET
+
+.ContextSwitch_Restartprocloop
+IMM R5 .ProcessDescriptors
+LOD R7 R5
+BRZ .END R7
+JMP .ContextSwitch_Restartprocloop_Return
+
+!CreateStartingProc
+.CreateStartingProc
+SUB R3 .VirtualRegister R9 
+STR .VirtualRegister 23
+CAL !Scal_Malloc
+LOD R3 .VirtualRegister
+STR .ProcessDescriptors R3
+STR R3 R0 //set PID to 0
+LSTR R3 1 R4
+OUT %ADDR 6
+IN R5 %BUS
+ADD R5 R4 R5
+LSTR R3 2 R5
+LSTR R3 3 R4
+LSTR R3 4 R0
+LSTR R3 5 R0
+LSTR R3 6 R0
+ADD R9 R3 7 //R0
+IMM R5 .ProcessDescriptors
+MOV R10 R0
+
+.Exec_Loop
+OUT %ADDR R4
+IN R6 %BUS
+BSR R3 R6 12
+BSR R2 R6 8
+BSR R1 R6 4
+AND R2 R2 0xF
+AND R1 R1 0xF
+AND R6 R6 0xF
+ADD R6 R6 .InstructionTable
+LOD R6 R6
+CAL R6
+INC R4 R4
+INC R10 R10
+STR R9 R0 //keep R0 as 0
+BLE .Exec_Loop R10 255
+DEC R4 R4
+CAL .ContextSwitch
+JMP .Exec_Loop
+
