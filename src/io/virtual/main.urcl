@@ -1,0 +1,200 @@
+
+!Scal_Gets
+.Scal_Gets //TODO: make non blocking
+LLOD R3 R3 R9
+PSH R3
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R2 !VirtualRegister
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R6 !VirtualRegister
+POP R3
+BRZ .Scal_Gets_End R2
+LOD R7 !OSVar_ECHO
+.Scal_Gets_Loop
+IN R11 %TEXT
+BRE .Scal_Gets_End R11 R6
+BRZ .Scal_Gets_NoEcho R7
+PSH R2
+PSH R3
+PSH R6
+PSH R7
+PSH R11
+CAL .Scal_Putc_SkipGet
+POP R11
+POP R7
+POP R6
+POP R3
+POP R2
+.Scal_Gets_NoEcho
+STR R3 R11
+INC R3 R3
+DEC R2 R2
+BNZ .Scal_Gets_Loop R2
+.Scal_Gets_End
+STR R3 R0
+RET
+
+!Scal_Getc
+.Scal_Getc //TODO: make non blocking
+IN R1 %TEXT
+LSTR R3 R9 R1
+RET
+
+!IO_Buffer_Addr
+.IO_Buffer_Addr
+DW 0
+
+!IO_Buffer_End_Addr
+.IO_Buffer_End_Addr
+DW 0
+
+.IO_Colors
+DW [0x2104 0xe1ab 0x5ca5 0xaba2 0x2c1c 0xb9fc 0x1cb2 0xad55]
+DW [0x5aeb 0xf2ce 0x6d66 0xc443 0x54de 0xcb3e 0x2575 0xdf1b]
+
+!Scal_Putci
+.Scal_Putci
+INC R4 R4
+OUT %ADDR R4
+IN R11 %BUS
+CAL .Scal_Putc_SkipGet
+RET
+
+!Scal_Puts
+.Scal_Puts
+LLOD R1 R3 R9
+CAL .PrintString
+RET
+
+!PrintString
+.PrintString //r1 = string address
+LOD R11 R1
+BRZ .PrintString_Exit R11
+CAL .Scal_Putc_SkipGet
+INC R1 R1
+JMP .PrintString
+.PrintString_Exit
+RET
+
+!Scal_Putc
+.Scal_Putc
+LLOD R11 R3 R9
+.Scal_Putc_SkipGet
+//store in buffer
+BSL R2 R20 12
+BSL R7 R19 8
+ADD R2 R7 R2
+
+BRE .Scal_Putc_NewLine R11 '\n'
+
+BSR R6 R18 3
+LOD R7 .IO_Buffer_Addr
+ADD R7 R7 R6
+BSR R6 R13 4
+BSR R3 @WIDTH 3
+MLT R6 R6 R3
+ADD R7 R7 R6
+
+ADD R2 R11 R2
+STR R7 R2
+
+BSL R11 R11 3
+ADD R11 R11 !IO_Font
+PSH R13
+CAL .PrintChar
+POP R13
+ADD R18 R18 8
+BRL .Scal_Putc_End R18 @WIDTH
+MOV R18 R0
+ADD R13 R13 16
+BRL .Scal_Putc_End R13 @HEIGHT
+.Scal_Putc_Scroll
+LOD R7 .IO_Buffer_Addr
+BSR R3 @WIDTH 3
+//scroll
+ADD R2 R7 R3
+LOD R3 .IO_Buffer_End_Addr
+.Scal_Putc_ScrollLoop
+CPY R7 R2
+INC R7 R7
+INC R2 R2
+BLE .Scal_Putc_ScrollLoop R2 R3
+CAL .PrintContents
+SUB R13 @HEIGHT 16
+.Scal_Putc_End
+OUT %BUFFER 2
+RET
+
+.Scal_Putc_NewLine
+MOV R18 R0
+ADD R13 R13 16
+BGE .Scal_Putc_Scroll R13 @HEIGHT
+RET
+
+!PrintContents
+.PrintContents
+PSH R13
+PSH R18
+PSH R19
+PSH R20
+PSH R9
+LOD R9 .IO_Buffer_Addr
+MOV R13 R0
+.PrintContents_Loop
+MOV R18 R0
+.PrintContents_Loop_Loop
+LOD R11 R9
+BSR R19 R11 8
+BSR R20 R19 4
+AND R19 R19 0xF
+AND R11 R11 0xFF
+BSL R11 R11 3
+ADD R11 R11 !IO_Font
+PSH R13
+CAL .PrintChar
+POP R13
+ADD R18 R18 8
+INC R9 R9
+BRL .PrintContents_Loop_Loop R18 @WIDTH
+ADD R13 R13 16
+BRL .PrintContents_Loop R13 @HEIGHT
+POP R9
+POP R20
+POP R19
+POP R18
+POP R13
+OUT %BUFFER 2
+RET
+
+.PrintChar
+MOV R12 R18
+MOV R14 R0
+.PrintChar_Loop
+LLOD R15 R11 R14
+OUT %Y R13
+IMM R17 8
+.PrintChar_LoopLoop
+AND R16 R15 0x8000
+BRZ ~+3 R16
+LLOD R16 R19 .IO_Colors
+JMP ~+2
+LLOD R16 R20 .IO_Colors
+OUT %X R12
+OUT %COLOR R16
+LSH R15 R15
+INC R12 R12
+DEC R17 R17
+BRE .PrintChar_LoopLoop_End R17 -8
+BNZ .PrintChar_LoopLoop R17
+INC R13 R13
+OUT %Y R13
+MOV R12 R18
+JMP .PrintChar_LoopLoop
+.PrintChar_LoopLoop_End
+INC R13 R13
+INC R14 R14
+MOV R12 R18
+BNE .PrintChar_Loop R14 8
+RET
