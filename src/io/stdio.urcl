@@ -44,9 +44,12 @@ LOD R6 !VirtualRegister
 POP R3
 BRZ .Scal_Gets_End R2
 LOD R7 !OSVar_ECHO
+MOV R8 R2
 .Scal_Gets_Loop
 IN R1 %TEXT
 BRE .Scal_Gets_End R1 R6
+BRE .Scal_Gets_Backspace R1 8
+BRE .Scal_Gets_Backspace R1 127
 BRZ ~+2 R7
 OUT %TEXT R1
 STR R3 R1
@@ -56,6 +59,21 @@ BNZ .Scal_Gets_Loop R2
 .Scal_Gets_End
 STR R3 R0
 RET
+
+.Scal_Gets_Backspace
+BRE .Scal_Gets_Loop R8 R2
+BRZ ~+2 R7
+OUT %TEXT R1
+DEC R3 R3
+INC R2 R2
+OUT %TEXT 0x1b
+OUT %TEXT '['
+OUT %TEXT '1'
+OUT %TEXT 'D'
+OUT %TEXT 0x1b
+OUT %TEXT '['
+OUT %TEXT 'K'
+JMP .Scal_Gets_Loop
 
 !Scal_Getc
 .Scal_Getc //TODO: make non blocking
