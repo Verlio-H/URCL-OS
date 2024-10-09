@@ -1,19 +1,7 @@
-// URCL OS v3.stdinit_1.stdinit_1
-
-// Changes in 3.stdinit_1.stdinit_1:
-// Optimized Registers
-// Reduced context switch calls
-// Optimize some stuff into LLOD and LSTR
-
-// Changes in v3.stdinit_1:
-// realloc syscall
-// many many bug fixes
-// rudimentary ed implementation
-
 //HEADERS
 BITS 16
 MINREG 10
-MINHEAP 4096
+MINHEAP 16384
 MINSTACK 16
 
 .stdinit_Initialize
@@ -637,9 +625,12 @@ LOD R6 .stdbase_VirtualRegister
 POP R3
 BRZ .stdio_Scal_Gets_End R2
 LOD R7 .stdbase_OSVar_ECHO
+MOV R8 R2
 .stdio_Scal_Gets_Loop
 IN R1 %TEXT
 BRE .stdio_Scal_Gets_End R1 R6
+BRE .stdio_Scal_Gets_Backspace R1 8
+BRE .stdio_Scal_Gets_Backspace R1 127
 BRZ ~+2 R7
 OUT %TEXT R1
 STR R3 R1
@@ -649,6 +640,21 @@ BNZ .stdio_Scal_Gets_Loop R2
 .stdio_Scal_Gets_End
 STR R3 R0
 RET
+
+.stdio_Scal_Gets_Backspace
+BRE .stdio_Scal_Gets_Loop R8 R2
+BRZ ~+2 R7
+OUT %TEXT R1
+DEC R3 R3
+INC R2 R2
+OUT %TEXT 0x1b
+OUT %TEXT '['
+OUT %TEXT '1'
+OUT %TEXT 'D'
+OUT %TEXT 0x1b
+OUT %TEXT '['
+OUT %TEXT 'K'
+JMP .stdio_Scal_Gets_Loop
 
 .stdio_Scal_Getc //TODO: make non blocking
 IN R1 %TEXT
