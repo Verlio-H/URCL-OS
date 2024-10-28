@@ -317,7 +317,7 @@ LSTR R3 R9 R6
 INC R6 R6
 STR .OSVar_Restricted_NextPID R6
 SUB R3 .VirtualRegister R9 
-STR .VirtualRegister @PID_SIZE
+STR .VirtualRegister @PD_SIZE
 CAL !Scal_Malloc
 LOD R3 .VirtualRegister
 LOD R7 .OSVar_Restricted_CurrentFinalProc
@@ -517,7 +517,7 @@ RET
 !CreateStartingProc
 .CreateStartingProc
 SUB R3 .VirtualRegister R9 
-STR .VirtualRegister @PID_SIZE
+STR .VirtualRegister @PD_SIZE
 CAL !Scal_Malloc
 LOD R3 .VirtualRegister
 STR .ProcessDescriptors R3

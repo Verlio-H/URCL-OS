@@ -2,7 +2,7 @@ BITS 16
 MINREG 10
 MINHEAP 4096
 MINSTACK 16
-@DEFINE @PID_SIZE 23
+@DEFINE @PD_SIZE 23
 //HEADERS
 
 .stdinit_Initialize
@@ -345,7 +345,7 @@ LSTR R3 R9 R6
 INC R6 R6
 STR .stdbase_OSVar_Restricted_NextPID R6
 SUB R3 .stdbase_VirtualRegister R9
-STR .stdbase_VirtualRegister @PID_SIZE
+STR .stdbase_VirtualRegister @PD_SIZE
 CAL .stdmem_Scal_Malloc
 LOD R3 .stdbase_VirtualRegister
 LOD R7 .stdbase_OSVar_Restricted_CurrentFinalProc
@@ -541,7 +541,7 @@ RET
 
 .stdbase_CreateStartingProc
 SUB R3 .stdbase_VirtualRegister R9
-STR .stdbase_VirtualRegister @PID_SIZE
+STR .stdbase_VirtualRegister @PD_SIZE
 CAL .stdmem_Scal_Malloc
 LOD R3 .stdbase_VirtualRegister
 STR .stdbase_ProcessDescriptors R3
