@@ -1,8 +1,9 @@
-//HEADERS
 BITS 16
 MINREG 10
-MINHEAP 16384
+MINHEAP 4096
 MINSTACK 16
+@DEFINE @PID_SIZE 23
+//HEADERS
 
 .stdinit_Initialize
 OUT %ADDR 7 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
@@ -344,7 +345,7 @@ LSTR R3 R9 R6
 INC R6 R6
 STR .stdbase_OSVar_Restricted_NextPID R6
 SUB R3 .stdbase_VirtualRegister R9
-STR .stdbase_VirtualRegister 23
+STR .stdbase_VirtualRegister @PID_SIZE
 CAL .stdmem_Scal_Malloc
 LOD R3 .stdbase_VirtualRegister
 LOD R7 .stdbase_OSVar_Restricted_CurrentFinalProc
@@ -507,7 +508,8 @@ RET
 
 //HELPER FUNCTIONS
 
-.stdbase_END //final graceful exit routine
+//FINAL graceful exit routine
+.stdbase_END
 IMM R1 .stdbase_OSVar_Restricted_EndingString
 CAL .stdio_PrintString //r1 = string address
 HLT
@@ -527,7 +529,7 @@ LSTR R7 6 R8
 .stdbase_ContextSwitch_LodNextProc
 INC R5 R5
 LOD R7 R5
-BRE .stdbase_ContextSwitch_Restartprocloop R7 0
+BRE .stdio_ContextSwitch_Restartprocloop R7 0
 .stdbase_ContextSwitch_Restartprocloop_Return
 LLOD R4 R7 3
 LLOD R8 R7 4
@@ -537,15 +539,9 @@ STR .stdbase_OSVar_ERROR R8
 ADD R9 R7 7
 RET
 
-.stdbase_ContextSwitch_Restartprocloop
-IMM R5 .stdbase_ProcessDescriptors
-LOD R7 R5
-BRZ .stdbase_END R7
-JMP .stdbase_ContextSwitch_Restartprocloop_Return
-
 .stdbase_CreateStartingProc
 SUB R3 .stdbase_VirtualRegister R9
-STR .stdbase_VirtualRegister 23
+STR .stdbase_VirtualRegister @PID_SIZE
 CAL .stdmem_Scal_Malloc
 LOD R3 .stdbase_VirtualRegister
 STR .stdbase_ProcessDescriptors R3
@@ -669,6 +665,12 @@ INC R1 R1
 JMP .stdio_PrintString
 .stdio_PrintString_Exit
 RET
+
+.stdio_ContextSwitch_Restartprocloop
+IMM R5 .stdbase_ProcessDescriptors //pointers to them
+LOD R7 R5
+BRZ .stdbase_END R7
+JMP .stdbase_ContextSwitch_Restartprocloop_Return
 //SILKFS
 //STANDARD silk filesystem
 

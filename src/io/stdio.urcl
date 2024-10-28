@@ -90,3 +90,10 @@ INC R1 R1
 JMP .PrintString
 .PrintString_Exit
 RET
+
+!ContextSwitch_Restartprocloop
+.ContextSwitch_Restartprocloop
+IMM R5 !ProcessDescriptors
+LOD R7 R5
+BRZ !END R7
+JMP !ContextSwitch_Restartprocloop_Return

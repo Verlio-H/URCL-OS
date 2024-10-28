@@ -131,6 +131,7 @@ DW 0
 DW 0
 
 DW 0
+!ProcessDescriptors
 .ProcessDescriptors //pointers to them
 DW 0
 DW 0
@@ -316,7 +317,7 @@ LSTR R3 R9 R6
 INC R6 R6
 STR .OSVar_Restricted_NextPID R6
 SUB R3 .VirtualRegister R9 
-STR .VirtualRegister 23
+STR .VirtualRegister @PID_SIZE
 CAL !Scal_Malloc
 LOD R3 .VirtualRegister
 LOD R7 .OSVar_Restricted_CurrentFinalProc
@@ -479,13 +480,16 @@ RET
 
 //HELPER FUNCTIONS
 
-.END //final graceful exit routine
+//final graceful exit routine
+!END
+.END
 IMM R1 .OSVar_Restricted_EndingString
 CAL !PrintString
 HLT
 
 //EXECUTIONSTUFF
 
+!ContextSwitch
 .ContextSwitch
 MOV R10 R0
 LOD R7 R5
@@ -499,7 +503,8 @@ LSTR R7 6 R8
 .ContextSwitch_LodNextProc
 INC R5 R5
 LOD R7 R5
-BRE .ContextSwitch_Restartprocloop R7 0
+BRE !ContextSwitch_Restartprocloop R7 0
+!ContextSwitch_Restartprocloop_Return
 .ContextSwitch_Restartprocloop_Return
 LLOD R4 R7 3
 LLOD R8 R7 4
@@ -509,16 +514,10 @@ STR .OSVar_ERROR R8
 ADD R9 R7 7
 RET
 
-.ContextSwitch_Restartprocloop
-IMM R5 .ProcessDescriptors
-LOD R7 R5
-BRZ .END R7
-JMP .ContextSwitch_Restartprocloop_Return
-
 !CreateStartingProc
 .CreateStartingProc
 SUB R3 .VirtualRegister R9 
-STR .VirtualRegister 23
+STR .VirtualRegister @PID_SIZE
 CAL !Scal_Malloc
 LOD R3 .VirtualRegister
 STR .ProcessDescriptors R3

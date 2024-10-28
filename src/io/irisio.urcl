@@ -108,6 +108,13 @@ RET
 .IRIS_Keymap_Error
 HLT
 
+!ContextSwitch_Restartprocloop
+.ContextSwitch_Restartprocloop
+IMM R5 !ProcessDescriptors
+LOD R7 R5
+BRZ !END R7
+JMP !ContextSwitch_Restartprocloop_Return
+
 .IRIS_Keymap_map
 RW 0x30 //numbers
 RW 0x31
