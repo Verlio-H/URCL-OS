@@ -20,4 +20,4 @@ Current pre-configured targets:
 | ------ | ------- | ----------------------- |
 | 16 bit arch using storage ports & serial io| make urclos3.urcl | none |
 | IRIS redstone computer | make iris.urcl | gnu-sed |
-| High performance graphical device | make virtterm.urcl | run keyboard.sh |
+| High performance graphical device | make virtterm.urcl | run keyboard.sh, URCL implementation supports %KEY |
