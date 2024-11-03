@@ -250,6 +250,7 @@ CPY R7 R2
 INC R7 R7
 INC R2 R2
 BLE .Scal_Putc_ScrollLoop R2 R3
+STR !OSVar_Restricted_Temp2 1
 CAL .PrintContents
 SUB R13 @HEIGHT 16
 .Scal_Putc_End
@@ -274,6 +275,7 @@ STR R7 R18
 INC R7 R7
 BLE .Scal_Putc_FormFeed_Loop R7 R3
 MOV R18 R0
+STR !OSVar_Restricted_Temp2 R0
 CAL .PrintContents
 RET
 
@@ -322,12 +324,20 @@ PSH R18
 PSH R19
 PSH R20
 PSH R9
+PSH R5
 LOD R9 .IO_Buffer_Addr
+LOD R5 !OSVar_Restricted_Temp2
 MOV R13 R0
 .PrintContents_Loop
 MOV R18 R0
 .PrintContents_Loop_Loop
 LOD R11 R9
+BRZ .PrintContents_SkipNoPrint R5
+ADD R19 R13 16
+BGE .PrintContents_SkipNoPrint R19 @HEIGHT
+LLOD R19 R9 @WIDTH
+BRE .PrintContents_NoPrint R11 R19
+.PrintContents_SkipNoPrint
 BSR R19 R11 8
 BSR R20 R19 4
 AND R19 R19 0xF
@@ -337,11 +347,13 @@ ADD R11 R11 !IO_Font
 PSH R13
 CAL .PrintChar
 POP R13
+.PrintContents_NoPrint
 ADD R18 R18 8
 INC R9 R9
 BRL .PrintContents_Loop_Loop R18 @WIDTH
 ADD R13 R13 16
 BRL .PrintContents_Loop R13 @HEIGHT
+POP R5
 POP R9
 POP R20
 POP R19

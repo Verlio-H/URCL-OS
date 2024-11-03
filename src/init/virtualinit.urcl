@@ -51,6 +51,7 @@ STR !IO_Buffer_Addr R2
 ADD R1 R2 R1
 DEC R1 R1
 STR !IO_Buffer_End_Addr R1
+STR !OSVar_Restricted_Temp2 R0
 CAL !PrintContents
 JMP !CreateStartingProc
 
