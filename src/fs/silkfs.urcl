@@ -1,0 +1,935 @@
+//SILKFS
+//Standard silk filesystem
+
+//Defines:
+//Scal_Creat
+//Scal_Open
+//Scal_Close
+//Scal_Read
+//Scal_Write
+//Scal_Lseek
+//Scal_Rdir
+//Scal_Getdirname
+//Scal_Flen
+
+
+.FileDescriptors
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW 0
+DW -1
+
+NOP //to silence urcx
+!Scal_Creat
+.Scal_Creat
+LLOD R3 R3 R9 //pointer to name string
+//get length
+IMM R1 -2
+PSH R3
+.Scal_Creat_NameLoop
+LOD R2 R3
+INC R3 R3
+INC R1 R1
+BNZ .Scal_Creat_NameLoop R2
+BRP ~+2 R1
+MOV R1 R0 //in case someone trys to name a file "\0"
+ADD R3 R1 20
+PSH R4
+CAL .FindNextSpace
+MOV R3 R4
+POP R4
+ADD R3 R3 3
+OUT %ADDR R3
+IN R6 %BUS
+ADD R6 R6 R1
+OUT %ADDR R3
+OUT %BUS R6 //
+STR !OSVar_Restricted_Temp R6
+DEC R3 R3
+OUT %ADDR R3
+OUT %BUS 16 //
+DEC R3 R3
+OUT %ADDR R3
+OUT %BUS 0 //
+DEC R3 R3
+POP R6
+BSL R7 R1 8
+LOD R8 R6
+ADD R7 R7 R8
+OUT %ADDR R3
+OUT %BUS R7 //
+STR !OSVar_Restricted_Temp2 R7
+ADD R3 R3 4
+INC R6 R6
+.Scal_Creat_SetNameLoop
+BRZ .Scal_Creat_SetNameLoop_End R1
+LOD R8 R6
+OUT %ADDR R3
+OUT %BUS R8
+INC R6 R6
+INC R3 R3
+DEC R1 R1
+JMP .Scal_Creat_SetNameLoop
+.Scal_Creat_SetNameLoop_End
+//expand CWD and insert
+IMM R7 0
+LOD R3 !OSVar_CWD
+.Scal_Creat_UpdateDirLoop
+//follow chain to find final block
+INC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+//  check for remaining block header bit
+BSR R6 R6 2
+//      false -> end loop
+BRZ .Scal_Creat_UpdateDirLoop_End R6
+//      true -> go to end and get next header
+INC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+INC R3 R3
+OUT %ADDR R3
+IN R7 %BUS
+ADD R6 R6 R7
+DEC R6 R6
+OUT %ADDR R6
+IN R3 %BUS
+INC R7 R7
+JMP .Scal_Creat_UpdateDirLoop
+.Scal_Creat_UpdateDirLoop_End
+//set header in final block to mark it as not being final
+IN R6 %BUS
+OR R6 R6 4
+OUT %BUS R6
+BNZ .Scal_Creat_NotFirst R7
+BRE .Scal_Creat_NotFirst R3 1
+//  if block is first and addr != 0, subtract dir name length from addr (can be found from first thing in header)
+DEC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+BSR R6 R6 8
+SUB R3 R3 R6
+SUB R3 R3 3
+OUT %ADDR R3
+IN R6 %BUS
+OR R6 R6 4
+OUT %BUS R6
+.Scal_Creat_NotFirst 
+//FNS(9)
+PSH R3
+IMM R3 9
+PSH R4
+CAL .FindNextSpace
+MOV R8 R4
+POP R4
+POP R3
+//end of block = header
+ADD R3 R3 2 //points to starting addr
+OUT %ADDR R3
+IN R6 %BUS
+DEC R3 R3
+OUT %ADDR R3
+IN R7 %BUS
+ADD R6 R6 R7
+DEC R6 R6 //last word
+OUT %ADDR R6
+OUT %BUS R8
+//header[0] = '.'
+OUT %ADDR R8
+OUT %BUS '.'
+//header[1] = 0
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 0
+//header[2] = 5
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 5
+//header[3] = header+4
+INC R6 R8
+INC R8 R6
+OUT %ADDR R6
+OUT %BUS R8
+//header[4,5,6,7] = stuff from earlier
+LOD R6 !OSVar_Restricted_Temp2
+OUT %ADDR R8
+OUT %BUS R6
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 0
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 16
+INC R8 R8
+LOD R6 !OSVar_Restricted_Temp
+OUT %ADDR R8
+OUT %BUS R6
+//header[8] = 0
+INC R8 R8
+OUT %ADDR R8
+OUT %BUS 0
+RET
+
+!Scal_Open
+.Scal_Open
+PSH R4
+PSH R3
+ADD R3 R3 R9
+
+LOD R6 !OSVar_CWD
+CAL .Scal_Rdir_SkipSetup
+//find next fd
+IMM R1 .FileDescriptors
+.Scal_Open_Loop
+LOD R2 R1
+INC R1 R1
+BNZ .Scal_Open_Loop R2
+BRE .Scal_Open_Error R2 -1
+DEC R1 R1
+POP R3
+SUB R2 R1 .FileDescriptors
+LSTR R3 R9 R2
+SUB R3 !VirtualRegister R9 
+STR !VirtualRegister 4
+PSH R1
+CAL !Scal_Malloc
+POP R1
+LOD R4 !VirtualRegister
+STR R1 R4
+MOV R1 R4
+LOD R3 !OSVar_Restricted_Temp
+OUT %ADDR R3
+IN R4 %BUS //location
+STR R1 R4
+SUB R3 R3 3 //start of file header
+LSTR R1 1 R3
+INC R3 R3
+OUT %ADDR R3
+IN R2 %BUS
+BSR R2 R2 2 //number of remaining segments
+LSTR R1 3 R2
+INC R3 R3
+OUT %ADDR R3
+IN R2 %BUS //size of segment
+ADD R2 R2 R4
+DEC R2 R2
+LSTR R1 2 R2
+POP R4
+RET
+
+.Scal_Open_Error
+STR !OSVar_ERROR 12
+RET
+
+!Scal_Close
+.Scal_Close
+LLOD R3 R3 R9
+ADD R3 R3 .FileDescriptors
+LOD R1 R3
+BRZ .Scal_Close_Error R1
+DEC R1 R1
+LOD R2 R1
+AND R2 R2 @SMAX
+STR R1 R2
+INC R1 R1
+STR R3 R0
+RET
+
+.Scal_Close_Error
+STR !OSVar_ERROR 7
+RET
+
+!Scal_Read
+.Scal_Read
+LLOD R3 R3 R9
+PSH R3
+ADD R3 R3 .FileDescriptors
+LOD R1 R3 //fd to read from
+SUB R3 !VirtualRegister R9 
+PSH R1
+CAL !Ins_Pop
+POP R1
+LOD R7 !VirtualRegister //mem dest location
+SUB R3 !VirtualRegister R9 
+PSH R1
+PSH R7
+CAL !Ins_Pop
+POP R7
+POP R1
+LOD R6 !VirtualRegister //amount to read
+BRZ .Scal_Close_Error R1
+POP R3
+BGE .Scal_Close_Error R3 16
+.Scal_Read_Big_Loop
+LOD R2 R1 //seek addr
+LLOD R3 R1 2 //segment end
+LLOD R8 R1 3 //segments remaining?
+BRZ ~+2 R8
+DEC R3 R3
+ADD R8 R2 R6 //new seek address after
+BRG .Scal_Read_NoFullRead R8 R3 //too smol
+STR !OSVar_SEEKOFFSET R8
+STR R1 R8
+MOV R3 R8 //ending address
+STR !OSVar_Restricted_Temp R6
+//while (R2 <= R3) {
+.Scal_Read_Loop
+OUT %ADDR R2
+IN R8 %BUS
+STR R7 R8
+INC R7 R7
+INC R2 R2
+BRL .Scal_Read_Loop R2 R3
+LOD R3 !OSVar_Restricted_Temp
+BNE .Scal_Read_NextSegment R3 R6
+.Scal_Read_End
+LOD R3 !OSVar_Restricted_Temp
+STR !VirtualRegister R3
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Push
+RET
+
+.Scal_Read_NoFullRead
+STR R7 0
+INC R3 R3
+STR R1 R3
+STR !OSVar_SEEKOFFSET R3
+SUB R8 R3 R2
+STR !OSVar_Restricted_Temp R8
+BNZ .Scal_Read_Loop R8
+ADD R6 R6 R3
+.Scal_Read_NextSegment
+LLOD R8 R1 3
+BRZ .Scal_Read_End R8
+SUB R6 R6 R3 //remaining
+STR !OSVar_Restricted_Temp R6
+OUT %ADDR R2
+IN R2 %BUS //new header
+INC R2 R2
+OUT %ADDR R2
+IN R8 %BUS
+BSR R8 R8 2
+LSTR R1 3 R8 //remaining segment
+INC R2 R2
+OUT %ADDR R2
+IN R8 %BUS //segment length
+INC R2 R2
+OUT %ADDR R2
+IN R3 %BUS //segment start
+STR R1 R3 //new seek
+ADD R3 R3 R8
+DEC R3 R3
+LSTR R1 2 R3
+JMP .Scal_Read_Big_Loop
+
+!Scal_Write
+.Scal_Write
+PSH R4
+//LOD DST
+LLOD R3 R3 R9
+ADD R3 R3 .FileDescriptors
+LOD R1 R3 //fd to read from
+//LOD SRC
+SUB R3 !VirtualRegister R9 
+PSH R1
+CAL !Ins_Pop
+POP R1
+LOD R2 !VirtualRegister
+//LOD AMOUNT
+SUB R3 !VirtualRegister R9 
+PSH R1
+PSH R2
+CAL !Ins_Pop
+POP R2
+POP R1
+LOD R3 !VirtualRegister
+//PTR = DST.START
+LLOD R4 R1 1
+ADD R7 R4 3
+OUT %ADDR R7
+IN R4 %BUS
+//IF SEEK + AMOUNT >= PTR + DST.LEN THEN1
+.Scal_Write_Next
+LOD R6 R1 //seek
+ADD R6 R6 R3
+DEC R7 R7
+OUT %ADDR R7
+IN R7 %BUS
+ADD R7 R4 R7
+STR !OSVar_Restricted_Temp 0
+BRL .Scal_Write_NoFrag R6 R7
+//  AMOUNT = DST.END - SEEK
+LLOD R6 R1 2
+LLOD R7 R1 3
+BRZ ~+2 R7
+DEC R6 R6 //might be something wrong here
+LOD R7 R1
+//  REMAINING = AMOUNT - NEWAMOUNT
+SUB R6 R6 R7
+SUB R8 R3 R6
+DEC R8 R8 //no idea why this is necessary
+MOV R3 R6
+INC R3 R3
+STR !OSVar_Restricted_Temp 1
+//  CREATFRAG = TRUE
+.Scal_Write_NoFrag
+//PTR = SEEK
+//WHILE PTR < SEEK + AMOUNT
+LOD R4 R1
+ADD R7 R4 R3
+BGE .Scal_Write_AfterLoop R4 R7
+.Scal_Write_Loop
+//  CPY PTR SRC
+LOD R6 R2
+OUT %ADDR R4
+OUT %BUS R6
+//  INC SRC SRC
+INC R2 R2
+//  INC PTR PTR
+INC R4 R4
+BRL .Scal_Write_Loop R4 R7
+.Scal_Write_AfterLoop
+//LSEEK = PTR
+STR R1 R4
+LOD R6 !OSVar_Restricted_Temp //creatfrag
+BRZ .Scal_Write_End R6
+//IF CREATFRAG
+//  IF frag exists
+LLOD R6 R1 3
+BRZ .Scal_Write_NoFragExists R6
+OUT %ADDR R4
+IN R6 %BUS
+INC R6 R6
+OUT %ADDR R6
+IN R7 %BUS
+BSR R7 R7 2
+LSTR R1 3 R7
+INC R6 R6
+OUT %ADDR R6
+IN R7 %BUS
+INC R6 R6
+OUT %ADDR R6
+IN R6 %BUS
+ADD R7 R7 R6
+DEC R7 R7
+LSTR R1 2 R7
+STR R1 R6
+JMP .Scal_Write_FragExists_Return
+//  ELSE
+//      UPDATE THE ORIGINAL HEADERS
+.Scal_Write_NoFragExists
+LLOD R4 R1 1
+INC R4 R4
+.Scal_Write_CreatFrag_FindEnd
+OUT %ADDR R4
+IN R3 %BUS
+BSR R3 R3 2
+BRZ .Scal_Write_CreatFrag_FindEnd_End R3
+INC R4 R4
+OUT %ADDR R4
+IN R3 %BUS
+INC R4 R4
+OUT %ADDR R4
+IN R4 %BUS
+ADD R3 R3 R4
+DEC R3 R3
+OUT %ADDR R3
+IN R4 %BUS
+INC R4 R4
+JMP .Scal_Write_CreatFrag_FindEnd
+.Scal_Write_CreatFrag_FindEnd_End
+IN R3 %BUS //update dir header
+OR R3 R3 4
+OUT %BUS R3
+//update actual header
+MOV R6 R4
+DEC R6 R6
+OUT %ADDR R6
+IN R3 %BUS
+BSR R3 R3 8
+ADD R3 R3 3
+ADD R6 R6 3
+OUT %ADDR R6
+IN R6 %BUS
+SUB R6 R6 R3
+//2nd word of actual header
+OUT %ADDR R6
+IN R3 %BUS
+OR R3 R3 4
+OUT %BUS R3
+INC R4 R4
+OUT %ADDR R4
+IN R6 %BUS
+INC R4 R4
+OUT %ADDR R4
+IN R7 %BUS
+ADD R7 R6 R7
+DEC R7 R7 //pointer to last word
+
+OUT %ADDR R7
+IN R6 %BUS
+//      FNS(5+REMAINING)
+ADD R3 R8 5
+PSH R3
+PSH R8
+PSH R6
+PSH R7
+PSH R2
+CAL .FindNextSpace
+POP R2
+POP R7
+POP R6
+POP R8
+POP R3
+SUB R3 R3 5
+//      REPLACE LAST WORD WITH RESULT
+OUT %ADDR R7
+OUT %BUS R4
+//      SET HEADERS
+OUT %ADDR R4
+OUT %BUS '.'
+INC R4 R4
+OUT %ADDR R4
+OUT %BUS 0
+INC R4 R4
+INC R8 R8
+OUT %ADDR R4
+OUT %BUS R8
+DEC R8 R8
+INC R3 R4
+INC R4 R3
+OUT %ADDR R3
+OUT %BUS R4
+//      SET FIRST WORD TO LAST WORD OF PREVIOUS
+OUT %ADDR R4
+OUT %BUS R6
+//  UPDATE SEEK
+INC R4 R4
+STR R1 R4
+SUB R4 R4 5
+LSTR R1 1 R4
+ADD R4 R4 5
+LSTR R1 3 0
+//  UPDATE FD
+ADD R6 R4 R8
+DEC R6 R6
+LSTR R1 2 R6
+.Scal_Write_FragExists_Return
+//  AMOUNT = REMAINING
+MOV R3 R8
+//  JUMP BACK TO .Scal_Write_NoFrag WITH REMAINING AS NEW AMOUNT, CREATFRAG AS FALSE
+STR !OSVar_Restricted_Temp 0
+LLOD R4 R1 1
+ADD R7 R4 3
+LOD R4 R1
+JMP .Scal_Write_Next
+.Scal_Write_End
+POP R4
+RET
+
+!Scal_Lseek
+.Scal_Lseek
+PSH R3
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R1 !VirtualRegister //file
+ADD R1 R1 .FileDescriptors
+LOD R1 R1
+LOD R2 R1
+POP R3
+ADD R3 R3 R9
+LOD R3 R3 //offset
+PSH R2
+//check if negative offset
+.Scal_Lseek_Loop
+POP R2
+PSH R2
+ADD R2 R2 R3
+//check if exceeds end of fragment
+LLOD R3 R1 2
+LLOD R6 R1 3
+BRZ ~+2 R6
+DEC R3 R3
+BLE .Scal_Lseek_End R2 R3
+//check if remaining fragments
+BRZ .Scal_Lseek_EOF R6
+//get remaining amount
+SUB R2 R2 R3
+//go to next fragment if available
+INC R3 R3
+OUT %ADDR R3
+IN R3 %BUS
+//update fd
+LSTR R1 1 R3
+INC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+BSR R6 R6 2 //remaining seg
+LSTR R1 3 R6
+INC R3 R3
+OUT %ADDR R3
+IN R6 %BUS
+INC R3 R3
+OUT %ADDR R3
+IN R7 %BUS
+ADD R7 R7 R6
+LSTR R1 2 R7
+//next iteration
+MOV R3 R2
+JMP .Scal_Lseek_Loop
+.Scal_Lseek_End
+STR R1 R2
+STR !OSVar_SEEKOFFSET R2
+POP R0
+RET
+
+.Scal_Lseek_EOF
+POP R0
+STR !OSVar_ERROR 14 //EOF error
+//TODO: make this jump to the end of the file
+RET
+
+!Scal_Rdir
+.Scal_Rdir
+STR !OSVar_Restricted_Temp2 R4
+ADD R3 R3 R9
+PSH R3
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R6 !VirtualRegister //R6 = default dir
+BNE ~+2 R6 0xFFFF
+LOD R6 !OSVar_CWD
+POP R3
+.Scal_Rdir_SkipSetup
+PSH R3
+LOD R3 R3
+LOD R1 R3
+PSH R0
+BRZ .Scal_Rdir_BadDir R1
+POP R0
+BRE .Scal_Rdir_UseCWD R1 '.'
+BRE .Scal_Rdir_UseRoot R1 '/'
+JMP .Scal_Rdir_UseDefault
+
+.Scal_Rdir_UseCWD
+LOD R2 !OSVar_CWD
+INC R3 R3
+JMP .Scal_Rdir_Start
+
+.Scal_Rdir_UseRoot
+LOD R2 !OSVar_ROOT
+INC R3 R3
+JMP .Scal_Rdir_Start
+
+.Scal_Rdir_UseDefault
+MOV R2 R6
+.Scal_Rdir_Start
+ADD R2 R2 3
+STR !OSVar_Restricted_Temp R2
+OUT %ADDR R2
+IN R1 %BUS //dir start
+DEC R2 R2
+OUT %ADDR R2
+IN R4 %BUS
+ADD R4 R4 R1
+DEC R4 R4
+SUB R2 R2 2
+LOD R1 R3
+INC R3 R3
+BRZ .Scal_Rdir_FullPathInstant R1
+BRE .Scal_Rdir_Start R1 '/'
+DEC R3 R3
+PSH R3
+PSH R0
+.Scal_Rdir_Loop
+POP R0
+POP R3
+PSH R3
+LOD R1 R3
+OUT %ADDR R2
+IN R6 %BUS
+BRZ .Scal_Rdir_BadDir R6
+BRE .Scal_Rdir_NextSeg R2 R4
+ADD R2 R2 4
+AND R7 R6 0xFF
+PSH R0
+BNE .Scal_Rdir_Loop R7 R1
+INC R3 R3
+POP R0
+BSR R6 R6 8
+DEC R1 R2
+STR !OSVar_Restricted_Temp R1
+OUT %ADDR R1
+IN R7 %BUS //file addr
+SUB R7 R7 R6
+PSH R7
+.Scal_Rdir_CheckDirLoop
+LOD R1 R3
+SETE R7 R1 R0
+SETE R8 R1 '/'
+OR R7 R7 R8
+SETE R8 R1 0x20 //damn you bram I spent like 15 minutes debugging this until I learned that ' ' was broken
+OR R7 R7 R8 //if this == -1 then is end of current dir name
+SETE R8 R6 R0 //if this == -1 then is end of search dir name
+XNOR R7 R7 R8 //if are not equal then there is no match
+BRZ .Scal_Rdir_Loop R7
+BRZ .Scal_Rdir_FullPathFound R1
+BRE .Scal_Rdir_FullPathFound R1 0x20
+BRE .Scal_Rdir_DirectoryFound R1 '/'
+POP R7
+PSH R7
+OUT %ADDR R7
+IN R7 %BUS
+BNE .Scal_Rdir_Loop R1 R7
+POP R7
+INC R7 R7
+PSH R7
+INC R3 R3
+DEC R6 R6
+JMP .Scal_Rdir_CheckDirLoop
+
+.Scal_Rdir_NextSeg
+MOV R2 R6
+ADD R2 R2 2
+OUT %ADDR R2
+IN R3 %BUS
+INC R2 R2
+OUT %ADDR R2
+IN R4 %BUS
+ADD R4 R4 R3
+DEC R4 R4
+INC R2 R2
+PSH R0
+JMP .Scal_Rdir_Loop
+
+.Scal_Rdir_DirectoryFound
+INC R3 R3
+LOD R1 R3
+BRZ .Scal_Rdir_FullPathFound R1 //if ends with a / because yeah people do that sometimes
+DEC R4 R2
+OUT %ADDR R4
+IN R2 %BUS
+DEC R4 R4
+OUT %ADDR R4
+IN R4 %BUS
+ADD R4 R4 R2
+DEC R4 R4
+POP R0
+POP R0
+PSH R3
+PSH R0
+JMP .Scal_Rdir_Loop
+
+.Scal_Rdir_FullPathFound
+DEC R2 R2
+POP R0
+POP R0
+OUT %ADDR R2
+IN R2 %BUS
+.Scal_Rdir_FullPathInstant
+POP R3 //original R3
+STR R3 R2
+LOD R4 !OSVar_Restricted_Temp2
+RET
+
+.Scal_Rdir_BadDir
+STR !OSVar_ERROR 2
+POP R0
+POP R0
+LOD R4 !OSVar_Restricted_Temp2
+RET
+
+!Scal_Getdirname
+.Scal_Getdirname
+PSH R3
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R2 !VirtualRegister //max length
+DEC R2 R2
+POP R3
+ADD R3 R3 R9
+LOD R3 R3
+BRZ !Ins_Nop R2
+LOD R1 !OSVar_CWD
+ADD R6 R1 3
+OUT %ADDR R6
+IN R6 %BUS
+OUT %ADDR R1
+IN R1 %BUS
+AND R7 R1 0xFF
+STR R3 R7
+INC R3 R3
+STR R3 0
+DEC R2 R2
+BSR R1 R1 8
+BRZ !Ins_Nop R1
+SUB R6 R6 R1 //start of name
+.Scal_Getdirname_Loop
+BRZ !Ins_Nop R2
+OUT %ADDR R6
+IN R8 %BUS
+STR R3 R8
+DEC R2 R2
+DEC R1 R1
+INC R6 R6
+INC R3 R3
+STR R3 0
+BRZ !Ins_Nop R1
+BRZ !Ins_Nop R2
+JMP .Scal_Getdirname_Loop
+.Scal_Getdirname_End
+RET
+
+!Scal_Flen
+.Scal_Flen
+LLOD R3 R3 R9 //me when pointer to a pointer to a pointer to a pointer
+ADD R3 R3 .FileDescriptors
+LOD R3 R3
+BRZ .Scal_Close_Error R3 //no open file
+LLOD R3 R3 1
+ADD R3 R3 2
+IMM R8 0
+.Scal_Flen_Loop
+OUT %ADDR R3
+IN R6 %BUS //segment len
+ADD R8 R8 R6
+DEC R3 R3
+OUT %ADDR R3
+IN R7 %BUS
+BSR R7 R7 2 //remaining segments
+BRZ .Scal_Flen_End R7
+DEC R8 R8
+DEC R6 R6
+ADD R3 R3 2
+OUT %ADDR R3
+IN R7 %BUS //start of segment
+ADD R7 R7 R6
+OUT %ADDR R7
+IN R6 %BUS //next segment header address
+ADD R3 R6 2
+JMP .Scal_Flen_Loop
+.Scal_Flen_End
+STR !VirtualRegister R8
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Push
+RET
+
+.FindNextSpace
+//R3 = amount of space
+//TODO: count FFFFs to avoid eventual death
+//TODO: merge blocks
+//R4 = current address
+//R6, R7, R8 = temp
+IMM R4 0
+IMM R8 0
+.FNS_Loop
+OUT %ADDR R4
+IN R6 %BUS
+BRZ .FNS_CheckBlock R6
+BNE .FNS_Allocated R6 0xFFFF
+INC R4 R4
+JMP .FNS_Loop
+.FNS_Allocated
+IMM R8 0
+//get next block location
+ADD R4 R4 2
+OUT %ADDR R4
+IN R6 %BUS
+INC R4 R4
+OUT %ADDR R4
+IN R4 %BUS
+ADD R4 R4 R6
+JMP .FNS_Loop
+.FNS_CheckBlock
+ADD R4 R4 2
+OUT %ADDR R4
+IN R6 %BUS
+BRE .FNS_Error R6 0xFFFF
+BNZ .FNS_Merge R8
+.FNS_Merge_Ret
+ADD R7 R6 4 //total size
+BGE .FNS_Allocate R7 R3
+//not big enough
+SUB R8 R4 2 //update thingy
+INC R4 R4
+OUT %ADDR R4
+IN R4 %BUS
+ADD R4 R4 R6
+JMP .FNS_Loop
+.FNS_Allocate
+SUB R7 R7 R3 //extra space that exists
+SUB R4 R4 2
+PSH R4
+ADD R4 R4 R3 //start of additional block
+BGE .FNS_Allocate_BigBlock R7 4
+BRZ .FNS_Allocate_EmptyBlock R7
+OUT %ADDR R4
+OUT %BUS 0xFFFF
+INC R4 R4
+DEC R7 R7
+BNZ ~-4 R7
+.FNS_Allocate_EmptyBlock
+POP R4
+PSH R4
+ADD R4 R4 4
+SUB R3 R3 4
+BRZ .FNS_Allocate_End R3
+OUT %ADDR R4
+OUT %BUS 0
+INC R4 R4
+DEC R3 R3
+BNZ ~-4 R3
+.FNS_Allocate_End
+POP R4
+RET
+
+.FNS_Allocate_BigBlock
+SUB R7 R7 4
+OUT %ADDR R4
+OUT %BUS 0
+INC R4 R4
+OUT %ADDR R4
+OUT %BUS 0
+INC R4 R4
+OUT %ADDR R4
+OUT %BUS R7
+INC R7 R4
+INC R4 R7
+OUT %ADDR R7
+OUT %BUS R4
+JMP .FNS_Allocate_EmptyBlock
+.FNS_Merge
+//R8 block + R4 block
+//R4.len + R4.pos-R8.pos
+OUT %ADDR R4
+IN R6 %BUS
+INC R4 R4
+OUT %ADDR R4
+IN R7 %BUS
+ADD R6 R6 R7
+ADD R4 R8 3
+OUT %ADDR R4
+IN R7 %BUS
+SUB R6 R6 R7
+INC R6 R6
+DEC R4 R4
+OUT %ADDR R4
+OUT %BUS R6
+JMP .FNS_Merge_Ret
+.FNS_Error
+//this is very bad
+//TODO: add some actual stuff here
+HLT

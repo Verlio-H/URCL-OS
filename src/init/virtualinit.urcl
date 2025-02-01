@@ -1,0 +1,64 @@
+//HEADERS
+BITS 16
+MINREG 20
+MINHEAP 16384
+MINSTACK 16
+
+.Initialize
+OUT %BUFFER 1
+MOV R13 R0
+MOV R18 R0
+MOV R9 R0
+MOV R19 15
+MOV R20 R0
+
+OUT %ADDR 7 //load address of what should be the file executed on startup, if you delete this file you are dead dead on god
+IN R4 %BUS
+BRZ .Initialize_NoBoot R4
+STR !OSVar_STARTUPPROG R4
+STR !OSVar_MALLOCSADDR M0
+
+.Initialize_Memory
+SUB R5 @MINHEAP 2
+BGE .Initialize_ManyMemories R5 @SMAX
+STR M0 R5
+DEC R5 @MINHEAP
+LSTR M0 R5 -1
+JMP .Init_Display
+
+.Initialize_ManyMemories
+DEC R5 @SMAX
+STR M0 R5
+SUB R5 @MINHEAP @MSB
+DEC R5 R5
+DEC R6 @MSB
+LSTR M0 R6 R5
+DEC R5 @MINHEAP
+LSTR M0 R5 -1
+
+.Init_Display
+BSR R1 @HEIGHT 4
+INC R1 R1
+BSR R2 @WIDTH 3
+MLT R1 R2 R1
+SUB R3 !VirtualRegister R9 
+STR !VirtualRegister R1
+PSH R1
+CAL !Scal_Malloc
+POP R1
+LOD R2 !VirtualRegister
+STR !IO_Buffer_Addr R2
+ADD R1 R2 R1
+DEC R1 R1
+STR !IO_Buffer_End_Addr R1
+STR !OSVar_Restricted_Temp2 R0
+CAL !PrintContents
+JMP !CreateStartingProc
+
+.Initialize_NoBoot
+OUT %TEXT 'E'
+OUT %TEXT 'r'
+OUT %TEXT 'r'
+OUT %TEXT 'o'
+OUT %TEXT 'r'
+RET

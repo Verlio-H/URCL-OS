@@ -1,0 +1,483 @@
+.Scal_Gets_StartingX
+DW 0
+.Scal_Gets_StartingY
+DW 0
+
+!Scal_Gets
+.Scal_Gets
+LLOD R3 R3 R9
+PSH R3
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R2 !VirtualRegister
+STR !OSVar_Restricted_Temp R2
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Pop
+LOD R6 !VirtualRegister
+POP R3
+//check pd
+PSH R5
+LOD R7 R5
+LLOD R7 23 R7
+BNZ .Scal_Gets_NotStart R7
+STR .Scal_Gets_StartingX R18
+STR .Scal_Gets_StartingY R13
+INC R7 R2
+.Scal_Gets_NotStart
+DEC R7 R7
+//R2-R7
+SUB R11 R2 R7
+ADD R3 R3 R11
+MOV R2 R7
+LOD R7 !OSVar_ECHO
+BRZ .Scal_Gets_End R2
+.Scal_Gets_Loop
+LOD R11 .InputBuffer_ReadPtr
+LOD R5 .InputBuffer_WritePtr
+BNE .Scal_Gets_Loop_CharExists R11 R5
+//Update pd
+POP R5
+LOD R3 R5
+INC R2 R2
+LSTR R3 23 R2
+//Reset Stack
+SUB R3 !VirtualRegister R9 
+CAL !Ins_Push
+CPY !VirtualRegister !OSVar_Restricted_Temp
+SUB R3 !VirtualRegister R9
+CAL !Ins_Push
+//Context switch
+DEC R4 R4
+CAL !ContextSwitch
+RET
+.Scal_Gets_Loop_CharExists
+MOV R5 R11
+LLOD R11 .InputBuffer R11
+INC R5 R5
+AND R5 R5 0xF
+STR .InputBuffer_ReadPtr R5
+BRE .Scal_Gets_End R11 R6
+BRE .Scal_Gets_Delete R11 8
+BRE .Scal_Gets_Delete R11 127
+BRE .Scal_Gets_CarriageReturn R11 0xD
+BRE .Scal_Gets_Tab R11 9
+BRZ .Scal_Gets_NoEcho R7
+PSH R1
+PSH R2
+PSH R3
+PSH R6
+PSH R7
+PSH R11
+CAL .Scal_Putc_SkipGet
+POP R11
+POP R7
+POP R6
+POP R3
+POP R2
+POP R1
+.Scal_Gets_NoEcho
+STR R3 R11
+INC R3 R3
+DEC R2 R2
+BNZ .Scal_Gets_Loop R2
+.Scal_Gets_End
+STR R3 R0
+POP R5
+//Update pd
+LOD R3 R5
+LSTR R3 23 R0
+RET
+
+.Scal_Gets_Delete
+LOD R1 .Scal_Gets_StartingY
+BRG .Scal_Gets_Delete_GoodSpot R13 R1
+LOD R1 .Scal_Gets_StartingX
+BLE .Scal_Gets_Loop R18 R1
+.Scal_Gets_Delete_GoodSpot
+
+DEC R3 R3
+INC R2 R2
+BRZ .Scal_Gets_Loop R7
+PSH R1
+PSH R2
+PSH R3
+PSH R6
+PSH R7
+PSH R11
+CAL .Scal_Putc_SkipGet
+POP R11
+POP R7
+POP R6
+POP R3
+POP R2
+POP R1
+OUT %BUFFER 2
+JMP .Scal_Gets_Loop
+
+.Scal_Gets_CarriageReturn
+MOV R18 R0
+JMP .Scal_Gets_Loop
+
+.Scal_Gets_Tab
+SUB R2 R2 5
+BRN .Scal_Gets_End R2
+INC R2 R2
+STR R3 0x20
+INC R3 R3
+STR R3 0x20
+INC R3 R3
+STR R3 0x20
+INC R3 R3
+STR R3 0x20
+INC R3 R3
+PSH R1
+PSH R2
+PSH R3
+PSH R6
+PSH R7
+PSH R11
+IMM R11 0x20
+CAL .Scal_Putc_SkipGet
+IMM R11 0x20
+CAL .Scal_Putc_SkipGet
+IMM R11 0x20
+CAL .Scal_Putc_SkipGet
+IMM R11 0x20
+CAL .Scal_Putc_SkipGet
+POP R11
+POP R7
+POP R6
+POP R3
+POP R2
+POP R1
+JMP .Scal_Gets_Loop
+
+
+!Scal_Getc
+.Scal_Getc //TODO: make non blocking
+IN R1 %TEXT
+LSTR R3 R9 R1
+RET
+
+!IO_Buffer_Addr
+.IO_Buffer_Addr
+DW 0
+
+!IO_Buffer_End_Addr
+.IO_Buffer_End_Addr
+DW 0
+
+.IO_Colors
+DW [0x2104 0xe1ab 0x5ca5 0xaba2 0x2c1c 0xb9fc 0x1cb2 0xad55]
+DW [0x5aeb 0xf2ce 0x6d66 0xc443 0x54de 0xcb3e 0x2575 0xdf1b]
+
+!Scal_Putci
+.Scal_Putci
+INC R4 R4
+OUT %ADDR R4
+IN R11 %BUS
+CAL .Scal_Putc_SkipGet
+RET
+
+!Scal_Puts
+.Scal_Puts
+LLOD R1 R3 R9
+CAL .PrintString
+RET
+
+!PrintString
+.PrintString //r1 = string address
+LOD R11 R1
+BRZ .PrintString_Exit R11
+CAL .Scal_Putc_SkipGet
+INC R1 R1
+JMP .PrintString
+.PrintString_Exit
+RET
+
+.Scal_Putc_EscState
+DW 0
+
+!Scal_Putc
+.Scal_Putc
+LLOD R11 R3 R9
+.Scal_Putc_SkipGet
+//store in buffer
+LOD R2 .Scal_Putc_EscState
+BRE .Scal_Putc_EscBackground R2 1
+BRE .Scal_Putc_EscForeground R2 2
+BRE .Scal_Putc_FormFeed R11 '\f'
+BRE .Scal_Putc_NewLine R11 '\n'
+BRE .Scal_Putc_Esc R11 0x1B
+
+BSL R2 R20 12
+BSL R7 R19 8
+ADD R2 R7 R2
+
+
+BSR R6 R18 3
+LOD R7 .IO_Buffer_Addr
+ADD R7 R7 R6
+BSR R6 R13 4
+BSR R3 @WIDTH 3
+MLT R6 R6 R3
+ADD R7 R7 R6
+
+ADD R2 R11 R2
+STR R7 R2
+
+BRE .Scal_Putc_Delete R11 127
+BRE .Scal_Putc_Delete R11 8
+
+BSL R11 R11 3
+ADD R11 R11 !IO_Font
+PSH R13
+CAL .PrintChar
+POP R13
+ADD R18 R18 8
+BRL .Scal_Putc_End R18 @WIDTH
+MOV R18 R0
+ADD R13 R13 16
+BRL .Scal_Putc_End R13 @HEIGHT
+.Scal_Putc_Scroll
+LOD R7 .IO_Buffer_Addr
+BSR R3 @WIDTH 3
+//scroll
+ADD R2 R7 R3
+LOD R3 .IO_Buffer_End_Addr
+.Scal_Putc_ScrollLoop
+CPY R7 R2
+INC R7 R7
+INC R2 R2
+BLE .Scal_Putc_ScrollLoop R2 R3
+STR !OSVar_Restricted_Temp2 1
+CAL .PrintContents
+SUB R13 @HEIGHT 16
+.Scal_Putc_End
+OUT %BUFFER 2
+RET
+
+.Scal_Putc_NewLine
+MOV R18 R0
+ADD R13 R13 16
+BGE .Scal_Putc_Scroll R13 @HEIGHT
+RET
+
+.Scal_Putc_FormFeed
+LOD R7 .IO_Buffer_Addr
+LOD R3 .IO_Buffer_End_Addr
+BSR R18 @WIDTH 3
+SUB R3 R3 R18
+MOV R13 R0
+BSL R18 R20 12
+.Scal_Putc_FormFeed_Loop
+STR R7 R18
+INC R7 R7
+BLE .Scal_Putc_FormFeed_Loop R7 R3
+MOV R18 R0
+STR !OSVar_Restricted_Temp2 R0
+CAL .PrintContents
+RET
+
+.Scal_Putc_Delete
+BNZ ~+2 R18
+RET
+SUB R18 R18 8
+BSL R3 R20 12
+STR R7 R3
+IMM R11 !IO_Font
+PSH R13
+CAL .PrintChar
+POP R13
+RET
+
+.Scal_Putc_Esc
+STR .Scal_Putc_EscState 1
+RET
+
+.Scal_Putc_EscBackground
+SUB R11 R11 0x30
+BLE .Scal_Putc_EscBackground_Normalized R11 15
+SUB R11 R11 7
+BLE .Scal_Putc_EscBackground_Normalized R11 15
+SUB R11 R11 0x20
+.Scal_Putc_EscBackground_Normalized
+MOV R20 R11
+STR .Scal_Putc_EscState 2
+RET
+
+.Scal_Putc_EscForeground
+SUB R11 R11 0x30
+BLE .Scal_Putc_EscForeground_Normalized R11 15
+SUB R11 R11 7
+BLE .Scal_Putc_EscForeground_Normalized R11 15
+SUB R11 R11 0x20
+.Scal_Putc_EscForeground_Normalized
+MOV R19 R11
+STR .Scal_Putc_EscState 0
+RET
+
+!PrintContents
+.PrintContents
+PSH R13
+PSH R18
+PSH R19
+PSH R20
+PSH R9
+PSH R5
+LOD R9 .IO_Buffer_Addr
+LOD R5 !OSVar_Restricted_Temp2
+MOV R13 R0
+.PrintContents_Loop
+MOV R18 R0
+.PrintContents_Loop_Loop
+LOD R11 R9
+BRZ .PrintContents_SkipNoPrint R5
+ADD R19 R13 16
+BGE .PrintContents_SkipNoPrint R19 @HEIGHT
+LLOD R19 R9 @WIDTH
+BRE .PrintContents_NoPrint R11 R19
+.PrintContents_SkipNoPrint
+BSR R19 R11 8
+BSR R20 R19 4
+AND R19 R19 0xF
+AND R11 R11 0xFF
+BSL R11 R11 3
+ADD R11 R11 !IO_Font
+PSH R13
+CAL .PrintChar
+POP R13
+.PrintContents_NoPrint
+ADD R18 R18 8
+INC R9 R9
+BRL .PrintContents_Loop_Loop R18 @WIDTH
+ADD R13 R13 16
+BRL .PrintContents_Loop R13 @HEIGHT
+POP R5
+POP R9
+POP R20
+POP R19
+POP R18
+POP R13
+OUT %BUFFER 2
+RET
+
+.PrintChar
+MOV R12 R18
+MOV R14 R0
+.PrintChar_Loop
+LLOD R15 R11 R14
+OUT %Y R13
+IMM R17 8
+.PrintChar_LoopLoop
+AND R16 R15 0x8000
+BRZ ~+3 R16
+LLOD R16 R19 .IO_Colors
+JMP ~+2
+LLOD R16 R20 .IO_Colors
+OUT %X R12
+OUT %COLOR R16
+LSH R15 R15
+INC R12 R12
+DEC R17 R17
+BRE .PrintChar_LoopLoop_End R17 -8
+BNZ .PrintChar_LoopLoop R17
+INC R13 R13
+OUT %Y R13
+MOV R12 R18
+JMP .PrintChar_LoopLoop
+.PrintChar_LoopLoop_End
+INC R13 R13
+INC R14 R14
+MOV R12 R18
+BNE .PrintChar_Loop R14 8
+RET
+
+!ContextSwitch_Restartprocloop
+.ContextSwitch_Restartprocloop
+IMM R5 !ProcessDescriptors
+LOD R7 R5
+BRZ !END R7
+
+
+PSH R10
+PSH R11
+//get modifiers
+OUT %KEY 0xE0
+IN R10 %KEY
+IMM R11 !KeyboardLayout
+AND R10 R10 0b00110011 //ctrl/shift
+BRZ ~+2 R10
+IMM R11 !KeyboardLayout_Ctrl
+AND R10 R10 0b00100010 //shift
+BRZ ~+2 R10
+IMM R11 !KeyboardLayout_Shift
+
+//update keyboard buffer
+
+LOD R8 .InputBuffer_WritePtr
+IMM R1 4
+MOV R6 R0
+MOV R9 R1
+
+.InputBuffer_Update_Big_Loop
+OUT %KEY R9
+IN R4 %KEY
+LLOD R3 .KeyBuffer R6
+LSTR .KeyBuffer R6 R4
+AND R3 R3 R4
+SUB R4 R4 R3
+
+.InputBuffer_Update_Loop
+AND R2 R4 1
+BRZ .InputBuffer_Update_Next R2
+LLOD R2 R11 R9
+LSTR .InputBuffer R8 R2
+INC R8 R8
+AND R8 R8 0xF
+.InputBuffer_Update_Next
+INC R9 R9
+RSH R4 R4
+BNZ .InputBuffer_Update_Loop R4
+INC R6 R6
+ADD R1 R1 16
+MOV R9 R1
+BLE .InputBuffer_Update_Big_Loop R6 3
+
+//handle 102 key
+OUT %KEY 0x64
+IN R4 %KEY
+AND R4 R4 1
+SETNE R4 R4 R0
+AND R4 R4 0x2000
+
+LLOD R3 .KeyBuffer 2
+OR R2 R3 R4
+LSTR .KeyBuffer 2 R2
+
+AND R3 R3 0x2000
+AND R3 R3 R4
+SUB R4 R4 R3
+BRZ .InputBuffer_No102 R4
+LLOD R2 R11 0x31 // '\'
+LSTR .InputBuffer R8 R2
+INC R8 R8
+AND R8 R8 0xF
+.InputBuffer_No102
+STR .InputBuffer_WritePtr R8
+POP R11
+POP R10
+JMP !ContextSwitch_Restartprocloop_Return
+
+.InputBuffer_ReadPtr
+DW 0
+.InputBuffer_WritePtr
+DW 0
+.KeyBuffer
+DW 0 //0x04-0x13 (A-P)
+DW 0 //0x14-0x23 (Q-6)
+DW 0 //0x24-0x33 (7-;)
+DW 0 //0x34-0x43 ('-F10)
+
+.InputBuffer
+DW [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
