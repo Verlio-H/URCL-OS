@@ -335,7 +335,9 @@ LOD R11 R9
 BRZ .PrintContents_SkipNoPrint R5
 ADD R19 R13 16
 BGE .PrintContents_SkipNoPrint R19 @HEIGHT
-LLOD R19 R9 @WIDTH
+BSR R19 @WIDTH 3 //reduce to constant expression when feature is added to urcl
+NEG R19 R19
+LLOD R19 R9 R19
 BRE .PrintContents_NoPrint R11 R19
 .PrintContents_SkipNoPrint
 BSR R19 R11 8
