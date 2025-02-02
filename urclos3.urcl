@@ -2,6 +2,18 @@ BITS 16
 MINREG 10
 MINHEAP 4096
 MINSTACK 16
+@DEFINE @PD_PID 0
+@DEFINE @PD_START 1
+@DEFINE @PD_NAME 2
+@DEFINE @PD_ADDR 4
+@DEFINE @PD_SEEK 5
+@DEFINE @PD_STACK 6
+@DEFINE @PD_ERROR 7
+@DEFINE @PD_R0 8
+@DEFINE @FD_SEEK 0
+@DEFINE @FD_HEADER 1
+@DEFINE @FD_END 2
+@DEFINE @FD_CONT 3
 @DEFINE @PD_SIZE 23
 //HEADERS
 
@@ -334,7 +346,7 @@ RET
 .stdbase_Scal_Exec
 LLOD R4 R3 R9
 LOD R1 R5
-LSTR R1 1 R4 //update start of program
+LSTR R1 @PD_START R4 //update start of program
 DEC R4 R4
 RET
 
@@ -355,19 +367,15 @@ STR R7 R3
 LOD R6 .stdbase_OSVar_Restricted_NextPID
 DEC R6 R6
 STR R3 R6 //PID
-INC R3 R3 //+1
 LOD R1 R5
-INC R1 R1
-CPY R3 R1 //Start
-INC R3 R3 //+2
-STR R3 R0 //Name
-INC R3 R3 //+3
-STR R3 R4 //Read
-INC R3 R3 //+4
-ADD R1 R1 3
-CPY R3 R1 //Seek
-INC R1 R1
-INC R3 R3 //+5
+LLOD R6 R1 @PD_START
+LSTR R3 @PD_START R6 //Start
+LSTR R3 @PD_NAME R0
+LSTR R3 @PD_ADDR R4
+LLOD R6 R1 @PD_SEEK
+LSTR R3 @PD_SEEK R1
+ADD R1 R1 @PD_STACK
+ADD R3 R3 @PD_STACK
 //STACK
 LOD R6 R1
 PSH R6
@@ -520,23 +528,23 @@ HLT
 MOV R10 R0
 LOD R7 R5
 BRZ .stdbase_ContextSwitch_LodNextProc R7
-LSTR R7 3 R4
+LSTR R7 @PD_ADDR R4
 LOD R8 .stdbase_OSVar_SEEKOFFSET
-LSTR R7 4 R8
+LSTR R7 @PD_SEEK R8
 LOD R8 .stdbase_OSVar_ERROR
-LSTR R7 6 R8
+LSTR R7 @PD_ERROR R8
 //LOD next proc
 .stdbase_ContextSwitch_LodNextProc
 INC R5 R5
 LOD R7 R5
 BRE .stdio_ContextSwitch_Restartprocloop R7 0
 .stdbase_ContextSwitch_Restartprocloop_Return
-LLOD R4 R7 3
-LLOD R8 R7 4
+LLOD R4 R7 @PD_ADDR
+LLOD R8 R7 @PD_SEEK
 STR .stdbase_OSVar_SEEKOFFSET R8
-LLOD R8 R7 6
+LLOD R8 R7 @PD_ERROR
 STR .stdbase_OSVar_ERROR R8
-ADD R9 R7 7
+ADD R9 R7 @PD_R0
 RET
 
 .stdbase_CreateStartingProc
@@ -550,12 +558,12 @@ LSTR R3 1 R4
 OUT %ADDR 6
 IN R5 %BUS
 ADD R5 R4 R5
-LSTR R3 2 R5
-LSTR R3 3 R4
-LSTR R3 4 R0
-LSTR R3 5 R0
-LSTR R3 6 R0
-ADD R9 R3 7 //R0
+LSTR R3 @PD_NAME R5
+LSTR R3 @PD_ADDR R4
+LSTR R3 @PD_SEEK R0
+LSTR R3 @PD_STACK R0
+LSTR R3 @PD_ERROR R0
+ADD R9 R3 @PD_R0
 IMM R5 .stdbase_ProcessDescriptors
 MOV R10 R0
 
@@ -1627,7 +1635,7 @@ RET
 .stdmem_Ins_Push
 LLOD R3 R3 R9
 LOD R6 R5
-LLOD R7 R6 5 //stack location
+LLOD R7 R6 @PD_STACK //stack location
 BRZ .stdmem_Ins_Push_CreateStack R7
 ADD R8 R7 64 //R8 = stack cap
 LLOD R6 R9 15
@@ -1649,7 +1657,7 @@ POP R6
 POP R3
 LOD R7 .stdbase_VirtualRegister //address
 DEC R7 R7
-LSTR R6 5 R7
+LSTR R6 @PD_STACK R7
 MOV R6 R7
 JMP .stdmem_Ins_Push_CreateStack_Ret
 
@@ -1664,7 +1672,7 @@ RET
 
 .stdmem_Ins_Pop
 LOD R6 R5
-LLOD R6 R6 5 //stack location
+LLOD R6 R6 @PD_STACK //stack location
 BRZ .stdmem_Ins_Push_StackUnderflow R6
 ADD R7 R6 64
 LLOD R8 R9 15
