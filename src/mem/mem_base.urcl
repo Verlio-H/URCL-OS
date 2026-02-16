@@ -1,0 +1,124 @@
+.heap_offset
+DW 0
+
+.last_mem
+DW M0
+
+.last_mem_blk
+DW 0
+
+.oom
+DW [17 "\n\nout of memory, "]
+
+// no args
+// no return
+// clobers: R1, R2, R3, R4, R5, R6
+!mem_setup
+.mem_setup
+// Calculate heap size
+BGE .mem_setup_sufficient @HEAP 32
+IMM R1 .oom
+CAL !io_printstring
+CAL !halt
+.mem_setup_sufficient
+BSR R5 @HEAP 5 // Total block count
+ADD R1 R5 15 // Round up
+BSR R1 R1 4 // Word count for mask
+ADD R2 R1 M0
+STR .heap_offset R2
+IMM R3 M0
+// Initialize allocation mask
+// fast reserve is never necessary on 16 bit
+// .mem_setup_fast_reserve
+// BRL .mem_setup_fast_reserve_end R1 512
+// STR R3 0xFFFF
+// INC R3 R3
+// SUB R1 R1 512
+// JMP .mem_setup_fast_reserve
+// .mem_setup_fast_reserve_end
+MOV R4 R0
+.mem_setup_slow_reserve
+RSH R4 R4
+ADD R4 R4 0x8000
+SUB R1 R1 32
+SBRG .mem_setup_slow_reserve R1 R0
+STR R3 R4
+INC R3 R3
+.mem_setup_reserve_empty
+STR R3 R0
+INC R3 R3
+BRL .mem_setup_reserve_empty R3 R2
+AND R5 R5 0xF
+BRZ .mem_setup_tail_skip R5
+BSR R5 0xFFFF R5
+LLOD R6 R2 -1
+OR R5 R5 R6
+LSTR R2 -1 R5
+.mem_setup_tail_skip
+RET
+
+// no args
+// returns:
+// R1 -> block
+// R2 -> addr
+// clobbers: R3, R4, R5
+!mem_reserve
+.mem_reserve
+LOD R3 .heap_offset
+LOD R4 .last_mem
+LOD R1 .last_mem_blk
+.mem_reserve_big_loop
+LOD R2 R4
+MOV R5 R0
+BNE .mem_reserve_small_loop R2 0xFFFF
+INC R4 R4
+ADD R1 R1 16
+BRL .mem_reserve_big_loop R4 R3
+.mem_reserve_small_loop
+BRP .mem_reserve_found R2
+LSH R2 R2
+INC R5 R5
+INC R1 R1
+BRL .mem_reserve_small_loop R5 16
+INC R4 R4
+BRL .mem_reserve_big_loop R4 R3
+LOD R4 .last_mem
+BRE .mem_reserve_out R4 R3
+IMM R4 M0
+LOD R3 .last_mem
+MOV R1 R0
+JMP .mem_reserve_big_loop
+.mem_reserve_out
+IMM R1 .oom
+CAL !io_printstring
+CAL !halt
+.mem_reserve_found
+STR .last_mem R4
+AND R2 R1 0xFFF0
+STR .last_mem_blk R2
+LOD R2 R4
+BSR R5 0x8000 R5
+ADD R2 R2 R5
+STR R4 R2
+BSL R2 R1 5
+ADD R2 R2 M0
+RET
+
+// args:
+// R1 -> block
+// no returns
+// clobbers: R1, R2, R3
+!mem_free
+.mem_free
+AND R2 R1 0xFFF0
+STR .last_mem_blk R2
+BSR R2 R1 4
+ADD R2 R2 M0
+STR .last_mem R2
+LOD R3 R2
+AND R1 R1 0xF
+BSR R1 0x8000 R1
+NOT R1 R1
+AND R3 R3 R1
+STR R2 R3
+RET

@@ -1,0 +1,15 @@
+
+// args:
+// R1 -> ptr
+// no returns
+// clobbers: R2, R3
+!io_printstring
+.printstring
+LOD R2 R1
+.printstring_loop
+INC R1 R1
+LOD R3 R1
+OUT%TEXT R3
+DEC R2 R2
+BNZ .printstring_loop R2
+RET

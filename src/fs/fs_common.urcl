@@ -1,0 +1,35 @@
+@DEFINE @FS_OP_DRV    0x00 // return driver name
+@DEFINE @FS_OP_ROPEN  0x01 // open root with driver
+@DEFINE @FS_OP_CAPAB  0x02 // get own capabilities
+@DEFINE @FS_OP_SCSET  0x03 // set own capabilities
+
+@DEFINE @FS_OP_CLOSE  0x04 // close self
+@DEFINE @FS_OP_FORK   0x05 // fork self into two copies
+
+@DEFINE @FS_OP_COUNT  0x06 // count number of children
+@DEFINE @FS_OP_FIND   0x07 // find child by name
+@DEFINE @FS_OP_NQUERY 0x08 // query name of entry
+@DEFINE @FS_OP_TQUERY 0x09 // query type of entry (1 = mount)
+@DEFINE @FS_OP_DQUERY 0x0a // query driver of entry (with options)
+@DEFINE @FS_OP_RQUERY 0x0B // query resource id of entry
+@DEFINE @FS_OP_CQUERY 0x0C // query capabilities of entry
+@DEFINE @FS_OP_WALK   0x0D // walk to entry
+
+@DEFINE @FS_OP_ISTAT  0x0E // get integer stat
+@DEFINE @FS_OP_SSTAT  0x0F // set string stat
+
+@DEFINE @FS_OP_NSET   0x10 // set name of entry
+@DEFINE @FS_OP_DSET   0x11 // set driver of entry
+@DEFINE @FS_OP_CSET   0x12 // set capabilities of entry
+
+@DEFINE @FS_OP_REMOVE 0x13 // remove entry
+@DEFINE @FS_OP_SADDLE 0x14 // create saddle
+@DEFINE @FS_OP_SMOUNT 0x15 // create submount
+
+@DEFINE @FS_OP_READ   0x16 // read data from file
+@DEFINE @FS_OP_WRITE  0x17 // write data to file
+@DEFINE @FS_OP_LSEEK  0x18 // move readpoint
+@DEFINE @FS_OP_FLUSH  0x19 // flush file to device
+@DEFINE @FS_OP_WISTAT 0x1A // write integer stat
+@DEFINE @FS_OP_WSSTAT 0x1B // write string stat
+@DEFINE @FS_OP_MOV    0x1C // mov/copy file

@@ -1,0 +1,17 @@
+BITS 16
+MINHEAP 2048
+
+.halting
+DW [10 "halting..."]
+
+
+.start
+CAL !mem_setup
+CAL !proc_next
+HLT
+
+!halt
+.halt
+IMM R1 .halting
+CAL !io_printstring
+HLT

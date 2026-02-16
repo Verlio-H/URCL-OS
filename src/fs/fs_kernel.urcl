@@ -1,0 +1,25 @@
+.drv_name
+DW ["kernel"] //6
+
+!fs_kernel_drv
+.f_drv
+IMM R1 6
+IMM R2 .drv_name
+RET
+
+.invalid_root
+DW ["Invalid Root"] //12
+
+!fs_kernel_ropen
+.f_ropen
+BNE .f_ropen_error R2 1
+LOD R4 R2
+BNE .f_ropen_error R4 '@'
+RET
+
+.f_ropen_error
+MOV R1 R3
+IMM R2 @FS_OP_WRITE
+LOD R3 !proc_fd_table
+// TODO: fix stat
+LLOD R3 R3 R1 // R3 = ptr to file op function

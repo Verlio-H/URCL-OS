@@ -1,0 +1,56 @@
+
+.table_root
+DW 0
+
+!proc_fd_table
+.fd_table
+DW 0
+
+!proc_mem_table
+.mem_table
+DW 0
+
+!proc_pd_address
+.pd_address
+DW 0
+
+.oop
+DW [20 "\n\nout of processes, "]
+
+// PD Layout
+@DEFINE @PD_OFFSET_PID       0
+@DEFINE @PD_OFFSET_PRIORITY  1
+@DEFINE @PD_OFFSET_STAT      2
+@DEFINE @PD_OFFSET_EXSTAT    3
+@DEFINE @PD_OFFSET_MEM_TBL   4
+@DEFINE @PD_OFFSET_FD_TBL    5
+@DEFINE @PD_OFFSET_FSPROG    6
+@DEFINE @PD_OFFSET_EXEC_FD   7
+@DEFINE @PD_OFFSET_LAST_BLK  8
+@DEFINE @PD_OFFSET_LAST_ADDR 9
+
+@DEFINE @PD_OFFSET_REGS      10
+@DEFINE @PD_PREV             30
+@DEFINE @PD_NEXT             31
+
+@DEFINE @REG_LOC R8
+
+!proc_next
+.proc_next
+LOD R1 .pd_address
+BRZ .proc_end R1
+LLOD R2 R1 @PD_NEXT
+BRE .proc_end R2 R1
+STR .pd_address R2
+LLOD R3 R2 @PD_OFFSET_FD_TBL
+STR .fd_table R3
+LLOD R3 R2 @PD_OFFSET_MEM_TBL
+STR .mem_table R3
+LLOD @REG_LOC R2 @PD_OFFSET_REGS
+// TODO: Deal with status
+RET
+
+.proc_end
+IMM R1 .oop
+CAL !io_printstring
+CAL !halt
